@@ -1,7 +1,7 @@
 # OpenQuant 架构说明
 
 > 工业级 A 股量化系统，分层清晰、每层可独立测试 / 替换。
-> 本文档配合源码阅读，所有流程图用 `<pre class="mermaid">` 标签，支持 mermaid.js 渲染。
+> 本文档配合源码阅读，所有流程图用 ```` ```mermaid ```` 围栏，GitHub 原生渲染。
 
 ## 目录
 
@@ -21,7 +21,7 @@
 
 OpenQuant 是一个**分层、可替换**的量化系统，每一层只依赖下层的稳定接口：
 
-<pre class="mermaid">
+```mermaid
 flowchart TB
     subgraph L1 [① 数据层 data/]
         direction LR
@@ -88,7 +88,7 @@ flowchart TB
     L4 --> L5 --> L6
     L4 -.可选二审.-> L7 -.KEEP/DROP.-> L4
     L6 --> L8
-</pre>
+```
 
 每层的边界都是**纯 Python 函数 / Pydantic 数据类**，所以可以单测、可以替换实现（比如把 Tushare 换成 Wind 不影响上面）。
 
@@ -98,7 +98,7 @@ flowchart TB
 
 ### 2.1 数据源 & 存储
 
-<pre class="mermaid">
+```mermaid
 flowchart LR
     subgraph SRC [数据源]
         AK[AkShare]
@@ -125,7 +125,7 @@ flowchart LR
     STORE --> P[("data/parquet/<br/>daily/, valuation/, universe/")]
     P --> API["data/api.py<br/>get_panel(), get_universe()"]
     API --> CALLER[上层调用者<br/>factors / strategies / backtest]
-</pre>
+```
 
 ### 2.2 A股微观摩擦 — 都封装在 `backtest/ashare_rules.py`
 
@@ -148,7 +148,7 @@ flowchart LR
 
 ### 2.3 数据完整性自检
 
-<pre class="mermaid">
+```mermaid
 sequenceDiagram
     autonumber
     participant CLI as open-quant data check
@@ -165,7 +165,7 @@ sequenceDiagram
     CLI->>CLI: 检查复权因子单调性
     CLI->>CLI: 检查停牌符号
     Note over CLI: 任何异常 → 飞书告警
-</pre>
+```
 
 ---
 
@@ -173,7 +173,7 @@ sequenceDiagram
 
 125 个因子按来源分库；引擎统一从面板 (DataFrame) 计算到面板 (DataFrame)：
 
-<pre class="mermaid">
+```mermaid
 flowchart LR
     PANEL[("DuckDB Panel<br/>574 stk × 6.4 年")] --> ENG[FactorEngine]
 
@@ -189,7 +189,7 @@ flowchart LR
     ENG --> CACHE[("factors/<br/>cached parquet")]
     CACHE --> STRAT[策略读取]
     EVAL --> RPT[HTML 因子报告]
-</pre>
+```
 
 注册新因子只需在 `factors/library/` 加文件 + 在 `factors/__init__.py` 暴露名字 — `default_engine()` 自动收录。
 
@@ -199,7 +199,7 @@ flowchart LR
 
 `ml_lgb_strict` 是当前最关键的 composite：
 
-<pre class="mermaid">
+```mermaid
 flowchart TB
     PANEL[("Panel 2020-2023<br/>训练区间")] --> FEAT[特征矩阵<br/>122 base factors]
     FEAT --> LBL[label = next_5d_return]
@@ -216,7 +216,7 @@ flowchart TB
 
     HOLD[("Holdout 2024-2026<br/>模型从未见过")] -.作为因子使用.-> STRAT[ml_lgb_strict 策略]
     CACHE -.同上.-> STRAT
-</pre>
+```
 
 **严格性**：模型只在 2020-2023 训练，2024-2026 是真 OOS。这就是为什么 README 里 +100% / +228% 的数字是诚实的 — 数据未来从未泄漏。
 
@@ -226,7 +226,7 @@ flowchart TB
 
 策略输出"目标权重"，回测引擎按 A 股微观规则模拟撮合：
 
-<pre class="mermaid">
+```mermaid
 flowchart LR
     CFG[configs/strategies/<br/>*.yaml] --> STR[MultiFactorStrategy]
     PANEL[(Panel + 因子)] --> STR
@@ -249,7 +249,7 @@ flowchart LR
     end
 
     BT --> RPT[HTML 报告<br/>累计收益 + Sharpe + MDD + 归因]
-</pre>
+```
 
 事件回测 (`backtest/event_backtester.py`) 和 paper trading 共用同一份 `ashare_rules.py` — 这是"回测-实盘不偏离"的核心保证。
 
@@ -259,7 +259,7 @@ flowchart LR
 
 `scripts/paper_daily.py` 每天前进一步，状态全部 JSON 持久化在 `data/paper_state/<strategy>/`：
 
-<pre class="mermaid">
+```mermaid
 sequenceDiagram
     autonumber
     participant Cron as 调度 / CLI
@@ -279,7 +279,7 @@ sequenceDiagram
     Strat-->>Cron: 明日 target weights
     Cron->>State: persist pending_orders (明日 open 撮合)
     Cron->>State: save state.json + report.html
-</pre>
+```
 
 **为什么需要状态机**：A股 T+1 让"昨日买、今日不能卖"变成强约束，必须有状态来记录每只票的可卖份额。状态机让 paper trading 可断点续跑 — 中断了不丢数据。
 
@@ -289,7 +289,7 @@ sequenceDiagram
 
 可选的 LLM 二审层。在量化选出 top-N 后，对每只候选股做"质量门"评估：
 
-<pre class="mermaid">
+```mermaid
 flowchart TB
     Q[ml_lgb top-30<br/>候选股] --> PF{pre_filter}
 
@@ -325,7 +325,7 @@ flowchart TB
     KD --> FINAL
     WT --> FINAL
     VETO --> FINAL
-</pre>
+```
 
 ### 7.1 多源新闻的设计动机
 

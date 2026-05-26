@@ -12,7 +12,7 @@
 
 ## 系统一览
 
-<pre class="mermaid">
+```mermaid
 flowchart LR
     subgraph DATA [数据层]
         AK[AkShare] --> PARQ[(Parquet)]
@@ -33,7 +33,7 @@ flowchart LR
         MFS --> PT[Paper Trading<br/>state-persisted]
         PT --> REP[HTML 报告]
     end
-</pre>
+```
 
 详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
@@ -143,7 +143,7 @@ open-quant agents cache --clear
 
 在量化选出 top-N 候选股后，可选地用 LLM 评估每只是否值得留下：
 
-<pre class="mermaid">
+```mermaid
 flowchart LR
     Q[ml_lgb top-30] --> PF{pre_filter}
     PF -->|蓝筹| K[auto-KEEP<br/>跳过 LLM]
@@ -153,7 +153,7 @@ flowchart LR
     AGG --> DROP[DROP]
     KEEP --> P[组合]
     K --> P
-</pre>
+```
 
 ```yaml
 # configs/strategies/your_strategy.yaml
