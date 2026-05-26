@@ -63,13 +63,16 @@ jobs:
 
       - name: Upload coverage to Codecov
         # Public repos don't need a token; for private use CODECOV_TOKEN secret
-        uses: codecov/codecov-action@v4
+        # Pinned to v5 because v4 occasionally resolves to a missing SHA in
+        # GitHub's Actions registry (codeload archive download fails).
+        uses: codecov/codecov-action@v5
         if: matrix.python-version == '3.11'   # only upload once per CI run
+        continue-on-error: true               # codecov outage should not fail tests
         with:
           files: ./coverage.xml
           flags: unittests
           name: codecov-openquant
-          fail_ci_if_error: false             # don't break CI if codecov upload fails
+          fail_ci_if_error: false
           verbose: true
 
       - name: Compile-check all scripts
