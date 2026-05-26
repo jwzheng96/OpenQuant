@@ -37,7 +37,15 @@ qualitative_overlay:
     # model + api_key 从 configs/data_sources.yaml 读
   decision:
     mode: filter               # filter (KEEP/DROP) | weight (multiplier)
-    veto_threshold: 0.7        # 任意 agent SELL 且 conf >= 0.7 → 强否决
+    veto_threshold: 0.85       # 提高门槛 — 只有"高度确信卖"才强制 DROP
+  pre_filter:
+    only_risky: true           # 蓝筹自动 KEEP，节省 LLM 成本
+    risky_boards: [chinext, star, bse, unknown]
+    min_market_cap_yi: 100      # 100亿以下视为小市值
+    max_return_20d: 0.30        # 20日涨跌 ±30% 以外
+    max_pe_ttm: 80
+    max_pb: 10
+    st_always_risky: true
   cache:
     dir: data/agents_cache
     ttl_days: 7

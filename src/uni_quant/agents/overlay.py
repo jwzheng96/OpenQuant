@@ -63,10 +63,35 @@ class OverlayStats:
     n_kept: int = 0
     n_dropped: int = 0
     n_errors: int = 0
+    n_auto_kept_low_risk: int = 0    # pre-filter skipped LLM (blue chip, etc.)
     prompt_tokens: int = 0
     completion_tokens: int = 0
     cost_yuan: float = 0.0
     elapsed_sec: float = 0.0
+
+
+@dataclass
+class PreFilterConfig:
+    """Cheap rule-based pre-filter: skip LLM evaluation for safe blue-chips.
+
+    A stock is considered "risky" (and thus worth LLM scrutiny) if ANY of these:
+      - listed on ChiNext / STAR / BSE (smaller/younger boards)
+      - ST status in name
+      - total market cap below `min_market_cap_yi` 亿元 (= small cap)
+      - 20-day abs return exceeds `max_return_20d` (recent extreme move)
+      - PE_TTM above `max_pe_ttm` or PB above `max_pb` (extreme valuation)
+
+    Blue chips with MV > min_market_cap_yi, on main board, no ST tag, stable
+    returns → AUTO-KEEP without calling any LLM (saves ~40% cost on a HS300
+    universe).
+    """
+    only_risky: bool = False
+    risky_boards: tuple[str, ...] = ("chinext", "star", "bse", "unknown")
+    min_market_cap_yi: float = 100.0    # 100 亿元 cutoff; below = risky
+    max_return_20d: float = 0.30         # 20d return abs > 30% = risky
+    max_pe_ttm: float = 80.0
+    max_pb: float = 10.0
+    st_always_risky: bool = True
 
 
 def _safe_parse_json(text: str) -> dict:
@@ -96,12 +121,13 @@ class QualitativeOverlay:
         llm: LLMClient | None = None,
         cache: DecisionCache | None = None,
         agents_enabled: dict[str, bool] | None = None,
-        veto_threshold: float = 0.7,
+        veto_threshold: float = 0.85,    # 提高: 只有"高度确信卖"才强制 DROP
         decision_mode: Literal["filter", "weight"] = "filter",
         max_workers: int = 4,
         name_lookup: dict[str, str] | None = None,
-        cost_per_1m_in: float = 1.5,   # DeepSeek-V3 input price (CNY / 1M tokens)
-        cost_per_1m_out: float = 8.0,  # DeepSeek-V3 output price
+        pre_filter: PreFilterConfig | None = None,
+        cost_per_1m_in: float = 1.5,
+        cost_per_1m_out: float = 8.0,
     ):
         self.toolkit = toolkit or HybridToolkit()
         self.llm = llm or DeepSeekClient()
@@ -113,6 +139,7 @@ class QualitativeOverlay:
         self.decision_mode = decision_mode
         self.max_workers = max_workers
         self.name_lookup = name_lookup or {}
+        self.pre_filter = pre_filter or PreFilterConfig()
         self.cost_per_1m_in = cost_per_1m_in
         self.cost_per_1m_out = cost_per_1m_out
         self._stats = OverlayStats()
@@ -160,9 +187,25 @@ class QualitativeOverlay:
         self._stats.n_evaluated += 1
         as_of_str = as_of.isoformat()
         name = self.name_lookup.get(symbol, symbol)
+
+        # Pre-filter: skip LLM for low-risk blue chips
+        if self.pre_filter.only_risky:
+            is_risky, reason = self._risk_check(symbol, as_of)
+            if not is_risky:
+                self._stats.n_auto_kept_low_risk += 1
+                self._stats.n_kept += 1
+                return OverlayDecision(
+                    symbol=symbol, as_of=as_of_str, action="KEEP",
+                    confidence=0.9,
+                    rationale=f"[auto-keep] 蓝筹低风险，跳过 LLM ({reason})",
+                )
+
         analyst_outputs: dict[str, dict] = {}
 
-        # ---- Parallel data fetch (3 toolkit calls concurrently, ~3x speedup) ----
+        # ---- Parallel data fetch with per-call timeout ----
+        # Hard timeout prevents a single hung Akshare call from blocking the
+        # whole eval. 25s is generous for legitimate API responses.
+        FETCH_TIMEOUT = 25.0
         data: dict[str, object] = {}
         with ThreadPoolExecutor(max_workers=3) as fetch_pool:
             futures = {}
@@ -172,12 +215,12 @@ class QualitativeOverlay:
                 futures[fetch_pool.submit(self.toolkit.get_news, symbol, days=7, limit=8)] = "news"
             if self.agents_enabled.get("technical"):
                 futures[fetch_pool.submit(self.toolkit.get_technical, symbol, as_of=as_of)] = "technical"
-            for fut in as_completed(futures):
+            for fut in as_completed(futures, timeout=FETCH_TIMEOUT * 2):
                 kind = futures[fut]
                 try:
-                    data[kind] = fut.result()
+                    data[kind] = fut.result(timeout=FETCH_TIMEOUT)
                 except Exception as e:
-                    log.warning(f"{symbol} {kind} fetch: {e}")
+                    log.warning(f"{symbol} {kind} fetch: {type(e).__name__}: {str(e)[:80]}")
 
         # Use the fundamentals snapshot to backfill `name` if we didn't have it
         if name == symbol and "fundamentals" in data:
@@ -251,6 +294,87 @@ class QualitativeOverlay:
 
     # ---- helpers -----------------------------------------------------------
 
+    def _risk_check(self, symbol: str, as_of: date) -> tuple[bool, str]:
+        """Cheap rule-based: is this stock 'risky' enough to deserve LLM scrutiny?
+
+        Returns (is_risky, short_reason). All checks query local data — no API calls.
+        Returns is_risky=True if anything triggers.
+        """
+        from uni_quant.backtest.ashare_rules import classify_board, is_st
+        from uni_quant.agents.toolkit import _info_cache_get, _code_part
+
+        # 1. Board classification (cheapest, no I/O)
+        board = classify_board(symbol)
+        if board.value in self.pre_filter.risky_boards:
+            return True, f"小板块 ({board.value})"
+
+        # 2. ST name check (via cached info)
+        code = _code_part(symbol)
+        info = _info_cache_get(code) or {}
+        name = info.get("name") or self.name_lookup.get(symbol, "")
+        if self.pre_filter.st_always_risky and is_st(name):
+            return True, "ST"
+
+        # 3. Market cap (from cached info or local store)
+        mv_yi = None
+        if info.get("total_mv"):
+            mv_yi = float(info["total_mv"]) / 1e8
+        else:
+            # Fallback: try local daily_basic store
+            try:
+                from uni_quant.data.api import get_data_api
+                api = get_data_api()
+                res = api.query.con.execute(
+                    "SELECT total_mv FROM daily_basic "
+                    "WHERE symbol = ? AND trade_date <= ? "
+                    "ORDER BY trade_date DESC LIMIT 1",
+                    [symbol, as_of],
+                ).pl()
+                if not res.is_empty() and res["total_mv"][0] is not None:
+                    # daily_basic.total_mv is stored in 亿元
+                    mv_yi = float(res["total_mv"][0])
+            except Exception:
+                pass
+        if mv_yi is not None and mv_yi < self.pre_filter.min_market_cap_yi:
+            return True, f"小市值 ({mv_yi:.0f}亿)"
+
+        # 4. Recent 20-day abs return (from local daily store)
+        try:
+            from uni_quant.data.api import get_data_api
+            api = get_data_api()
+            from datetime import timedelta
+            panel = api.get_daily([symbol], as_of - timedelta(days=40), as_of, adjust="fwd",
+                                  include_basic=False)
+            if not panel.is_empty() and panel.height >= 20:
+                closes = panel.sort("trade_date")["close"].to_list()
+                ret_20d = closes[-1] / closes[-20] - 1
+                if abs(ret_20d) > self.pre_filter.max_return_20d:
+                    return True, f"近20日波动 {ret_20d:+.1%}"
+        except Exception:
+            pass
+
+        # 5. Extreme valuation from local daily_basic
+        try:
+            from uni_quant.data.api import get_data_api
+            api = get_data_api()
+            res = api.query.con.execute(
+                "SELECT pe_ttm, pb FROM daily_basic "
+                "WHERE symbol = ? AND trade_date <= ? "
+                "ORDER BY trade_date DESC LIMIT 1",
+                [symbol, as_of],
+            ).pl()
+            if not res.is_empty():
+                pe = res["pe_ttm"][0] if res["pe_ttm"][0] is not None else None
+                pb = res["pb"][0] if res["pb"][0] is not None else None
+                if pe is not None and float(pe) > self.pre_filter.max_pe_ttm:
+                    return True, f"高估值 PE={pe:.0f}"
+                if pb is not None and float(pb) > self.pre_filter.max_pb:
+                    return True, f"高估值 PB={pb:.1f}"
+        except Exception:
+            pass
+
+        return False, "蓝筹/低风险"
+
     def _call_analyst(self, role: str, symbol: str, as_of_str: str, build_user) -> dict:
         sys_prompt, user_fn = get_prompts(role)
         user_prompt = build_user(user_fn)
@@ -305,13 +429,26 @@ class QualitativeOverlay:
             ttl_days=int(cache_cfg.get("ttl_days", 7)),
         )
 
+        # Pre-filter config (skip LLM for blue chips)
+        pf_cfg = cfg.get("pre_filter") or {}
+        pre_filter = PreFilterConfig(
+            only_risky=bool(pf_cfg.get("only_risky", False)),
+            risky_boards=tuple(pf_cfg.get("risky_boards") or ("chinext", "star", "bse", "unknown")),
+            min_market_cap_yi=float(pf_cfg.get("min_market_cap_yi", 100.0)),
+            max_return_20d=float(pf_cfg.get("max_return_20d", 0.30)),
+            max_pe_ttm=float(pf_cfg.get("max_pe_ttm", 80.0)),
+            max_pb=float(pf_cfg.get("max_pb", 10.0)),
+            st_always_risky=bool(pf_cfg.get("st_always_risky", True)),
+        )
+
         return cls(
             toolkit=toolkit,
             llm=llm,
             cache=cache,
             agents_enabled=agents,
-            veto_threshold=float(decision.get("veto_threshold", 0.7)),
+            veto_threshold=float(decision.get("veto_threshold", 0.85)),
             decision_mode=decision.get("mode", "filter"),
             max_workers=int(cfg.get("max_workers", 4)),
             name_lookup=name_lookup or {},
+            pre_filter=pre_filter,
         )

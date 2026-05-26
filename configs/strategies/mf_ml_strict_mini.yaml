@@ -1,0 +1,28 @@
+name: mf_ml_strict_mini
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# 小规模版本 — 用于 A/B 评估，约束 LLM 成本
+factors:
+  - name: ml_lgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 10                    # 仅 10 候选股
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.10
+
+backtest:
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"
