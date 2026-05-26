@@ -162,14 +162,20 @@ class MultiFactorStrategy:
                 decisions = self.qualitative_overlay.evaluate(list(alpha.keys()), as_of=d)
                 if self.on_overlay_decisions is not None:
                     self.on_overlay_decisions(d, decisions)
-                # Apply decisions: DROP filters out, KEEP optionally scales
+                # Apply decisions uniformly via weight_multiplier:
+                #   - filter mode: KEEP→1.0, DROP→0.0 (so DROP is removed via 0)
+                #   - weight mode: KEEP→[0.5, 1.5], DROP→[0.0, 0.8] (soft)
+                # In both modes, multiplier 0 removes the stock entirely.
                 filtered: dict[str, float] = {}
                 for sym, contrib in alpha.items():
                     dec = decisions.get(sym)
-                    if dec is None or dec.action == "KEEP":
-                        mult = getattr(dec, "weight_multiplier", 1.0) if dec else 1.0
+                    if dec is None:
+                        filtered[sym] = contrib
+                        continue
+                    mult = getattr(dec, "weight_multiplier", 1.0)
+                    if mult > 1e-6:
                         filtered[sym] = contrib * mult
-                # If everything was dropped, fall back to unfiltered (fail-safe)
+                # Fail-safe: if everything zeroed out, fall back to raw alpha
                 if filtered:
                     alpha = filtered
                 else:

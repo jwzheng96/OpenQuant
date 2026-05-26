@@ -258,9 +258,12 @@ class QualitativeOverlay:
             if not isinstance(out, dict):
                 continue
             if out.get("action") == "SELL" and float(out.get("confidence", 0)) >= self.veto_threshold:
+                conf_sell = float(out.get("confidence", 0))
+                wm = (max(0.0, 1.0 - conf_sell) if self.decision_mode == "weight" else 0.0)
                 return OverlayDecision(
                     symbol=symbol, as_of=as_of_str, action="DROP",
-                    confidence=float(out.get("confidence", 0)),
+                    confidence=conf_sell,
+                    weight_multiplier=wm,
                     risk_flags=[f"{role}_strong_sell"],
                     rationale=f"[{role}] {out.get('rationale', '')[:150]}",
                     analyst_outputs=analyst_outputs,
@@ -278,12 +281,20 @@ class QualitativeOverlay:
         else:
             self._stats.n_dropped += 1
 
-        # Weight multiplier (for weight mode)
-        weight_mult = 1.0
-        if self.decision_mode == "weight" and action == "KEEP":
-            # boost or penalize based on aggregator confidence
-            # high-confidence KEEP → 1.5x, low-confidence KEEP → 0.5x
-            weight_mult = 0.5 + conf
+        # Weight multiplier
+        #   filter mode: KEEP=1.0, DROP=0.0 (binary)
+        #   weight mode (soft): KEEP in [0.5, 1.5], DROP in [0.0, 0.8]
+        #     — high-conf DROP gets weight_mult close to 0
+        #     — low-conf DROP barely reduces (gives benefit of the doubt)
+        if self.decision_mode == "weight":
+            if action == "KEEP":
+                weight_mult = 0.5 + conf       # 0.5..1.5
+            else:
+                # DROP with conf 0.5 → keep at 0.5; conf 0.9 → keep at 0.1
+                weight_mult = max(0.0, 1.0 - conf)
+        else:
+            # filter mode
+            weight_mult = 1.0 if action == "KEEP" else 0.0
 
         return OverlayDecision(
             symbol=symbol, as_of=as_of_str, action=action,

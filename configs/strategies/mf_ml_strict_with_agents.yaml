@@ -30,8 +30,8 @@ qualitative_overlay:
   agents:
     fundamentals: true
     news: true
-    technical: true
-    sentiment: false           # 爬虫不稳，初版关
+    technical: false           # 经 4 轮 A/B 实测：ml_lgb 已吃透量价，开启反而误杀小盘 winner
+    sentiment: false           # 爬虫不稳，未实现
   llm:
     provider: deepseek
     # model + api_key 从 configs/data_sources.yaml 读

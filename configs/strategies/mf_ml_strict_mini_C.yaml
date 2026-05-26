@@ -1,0 +1,56 @@
+name: mf_ml_strict_mini_C
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# C 方案: B 基础上改用 weight 模式 — DROP 不再一刀切，按 conf 软化
+# KEEP → 0.5-1.5x 权重；DROP → 0-0.8x 权重（高置信 DROP 接近 0，低置信 DROP 仅打折）
+factors:
+  - name: ml_lgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 10
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.10
+
+qualitative_overlay:
+  enabled: true
+  agents:
+    fundamentals: true
+    news: true
+    technical: false
+    sentiment: false
+  llm:
+    provider: deepseek
+  decision:
+    mode: weight              # ← C 方案: 软化决策
+    veto_threshold: 0.85
+  pre_filter:
+    only_risky: true
+    risky_boards: [chinext, star, bse, unknown]
+    min_market_cap_yi: 100
+    max_return_20d: 0.30
+    max_pe_ttm: 80
+    max_pb: 10
+    st_always_risky: true
+  cache:
+    dir: data/agents_cache
+    ttl_days: 7
+  toolkit:
+    kind: hybrid
+  max_workers: 3
+
+backtest:
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"
