@@ -1,0 +1,41 @@
+# 数据源配置 — 复制为 data_sources.yaml 并填入真实 token
+tushare:
+  token: "REPLACE_WITH_YOUR_TOKEN"
+  rate_limit_per_minute: 500   # 取决于积分等级
+  retry:
+    attempts: 5
+    backoff_seconds: 2
+
+akshare:
+  rate_limit_per_minute: 200
+  # akshare 没有 token，仅用于 wencai/em 等
+
+storage:
+  parquet_root: "./data/parquet"
+  duckdb_path: "./data/uni_quant.duckdb"
+  clickhouse:
+    host: "localhost"
+    port: 8123
+    database: "uni_quant"
+    user: "uni_quant"
+    password: "uni_quant"
+  postgres:
+    dsn: "postgresql://uni_quant:uni_quant@localhost:5432/uni_quant"
+
+datasets:
+  daily:                       # 日线
+    source: tushare
+    incremental: true
+  daily_basic:                 # 估值指标
+    source: tushare
+  adj_factor:                  # 复权因子
+    source: tushare
+  income / balance_sheet / cashflow:
+    source: tushare
+  moneyflow_hsgt:              # 北向
+    source: tushare
+  top_list:                    # 龙虎榜
+    source: tushare
+  minute_1m:                   # 分钟K
+    source: tushare            # 需要 Pro 高级权限
+    store: clickhouse

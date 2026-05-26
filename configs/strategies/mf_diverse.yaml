@@ -1,0 +1,52 @@
+name: mf_diverse
+version: "0.2"
+type: multi_factor
+enabled: false
+
+universe: default
+
+# 多元化因子组合 — 价值 + 规模 + 低波 + 微观结构 + 反转
+factors:
+  - name: vol_20d                  # 低波动 (RankICIR +3.74)
+    weight: 0.20
+    direction: 1
+  - name: size                     # 小市值 (RankICIR +3.63)
+    weight: 0.20
+    direction: 1
+  - name: alpha042                 # VWAP偏离 (RankICIR +3.32)
+    weight: 0.15
+    direction: 1
+  - name: amihud_20d               # 流动性 (RankICIR -2.88)
+    weight: 0.10
+    direction: 1                   # 因子内已 negate
+  - name: bp                       # 账面市值比 (RankICIR +2.00)
+    weight: 0.15
+    direction: 1
+  - name: alpha040                 # vol×corr (RankICIR +2.66)
+    weight: 0.10
+    direction: 1
+  - name: mom_20d                  # 20日动量反转 (RankICIR -2.29)
+    weight: 0.10
+    direction: -1
+
+neutralize:
+  industry: false
+  market_cap: false
+  styles: []
+
+selection:
+  top_n: 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08
+
+backtest:
+  start: "2022-06-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

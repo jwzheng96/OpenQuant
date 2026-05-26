@@ -1,0 +1,39 @@
+name: mf_value_momentum
+version: "0.1"
+type: multi_factor
+enabled: false
+
+universe: default
+
+factors:
+  - name: bp                     # 账面市值比
+    weight: 0.4
+    direction: 1
+  - name: roe_ttm                # 滚动 ROE
+    weight: 0.3
+    direction: 1
+  - name: mom_20d                # 20日动量
+    weight: 0.3
+    direction: 1
+
+neutralize:
+  industry: true
+  market_cap: true
+  styles: ["beta"]
+
+selection:
+  top_n: 30                      # 选 top 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"             # 每周五调仓
+  fill_at: "next_open"           # 下个交易日开盘成交 (避开涨跌停)
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2019-01-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

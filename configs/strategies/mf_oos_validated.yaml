@@ -1,0 +1,55 @@
+name: mf_oos_validated
+version: "1.0"
+type: multi_factor
+enabled: false
+
+universe: default
+
+# 仅 walk-forward 通过的因子 (train 2022-06..2023-12 → test 2024 OOS validation)
+# Criteria: sign match + |test_ICIR| ≥ 1 + decay ≥ 0.4 + rolling stability ≥ 0.5
+# 27/121 因子幸存，下面挑 8 个最强 + 类型互补
+factors:
+  - name: gtja_a042            # vol×corr (+test ICIR 4.00)
+    weight: 0.18
+    direction: 1
+  - name: gtja_a187            # open gap sum (-test ICIR -2.73)
+    weight: 0.15
+    direction: -1
+  - name: gtja_a150            # tp × vol (-test ICIR -3.16)
+    weight: 0.12
+    direction: -1
+  - name: alpha042             # rank(vwap-close)/rank(vwap+close) (+2.55)
+    weight: 0.12
+    direction: 1
+  - name: gtja_a161            # ATR-12 (-2.48)
+    weight: 0.10
+    direction: -1
+  - name: bp                   # 账面市值比 (+2.33)
+    weight: 0.13
+    direction: 1
+  - name: size                 # 小市值 (+1.82)
+    weight: 0.10
+    direction: 1
+  - name: vol_20d              # 低波 (+1.49)
+    weight: 0.10
+    direction: 1
+
+neutralize:
+  enabled: false  # 这版不中性化，可与下面 mf_oos_neutral 对比
+
+selection:
+  top_n: 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08
+
+backtest:
+  start: "2024-01-01"        # OOS only — 2024 全年
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

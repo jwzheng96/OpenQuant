@@ -1,0 +1,52 @@
+name: mf_oos_neutral
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Same OOS-validated factors but with Barra-light neutralization
+# Tests: did walk-forward whitelist actually find real alpha, or just better style tilts?
+factors:
+  - name: gtja_a042
+    weight: 0.18
+    direction: 1
+  - name: gtja_a187
+    weight: 0.15
+    direction: -1
+  - name: gtja_a150
+    weight: 0.12
+    direction: -1
+  - name: alpha042
+    weight: 0.12
+    direction: 1
+  - name: gtja_a161
+    weight: 0.10
+    direction: -1
+  - name: bp
+    weight: 0.13
+    direction: 1
+  - name: size
+    weight: 0.10
+    direction: 1
+  - name: vol_20d
+    weight: 0.10
+    direction: 1
+
+neutralize:
+  enabled: true
+
+selection:
+  top_n: 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08
+
+backtest:
+  start: "2024-01-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

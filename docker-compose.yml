@@ -1,0 +1,69 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: uni-quant-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./data/clickhouse:/var/lib/clickhouse
+      - ./infra/clickhouse/config.xml:/etc/clickhouse-server/config.d/uni_quant.xml:ro
+    environment:
+      CLICKHOUSE_DB: uni_quant
+      CLICKHOUSE_USER: uni_quant
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-uni_quant}
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: uni-quant-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      POSTGRES_DB: uni_quant
+      POSTGRES_USER: uni_quant
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uni_quant}
+    restart: unless-stopped
+
+  prefect:
+    image: prefecthq/prefect:3-latest
+    container_name: uni-quant-prefect
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./data/prefect:/root/.prefect
+    environment:
+      PREFECT_UI_URL: http://localhost:4200
+      PREFECT_API_URL: http://localhost:4200/api
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: uni-quant-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./data/prometheus:/prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: uni-quant-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-uni_quant}
+    restart: unless-stopped
+    depends_on:
+      - prometheus

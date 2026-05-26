@@ -1,0 +1,36 @@
+# 实盘账号与成本配置 — 复制为 trading.yaml 并填入真实凭据
+mode: paper                      # paper | live
+
+stock:
+  broker: qmt                    # qmt | paper
+  account_id: "REPLACE"
+  account_type: "STOCK"
+  qmt_path: "C:/QMT/userdata_mini"   # mini QMT 安装目录
+  commission_rate: 0.00025       # 万 2.5
+  commission_min: 5.0            # 最低 5 元
+  stamp_tax: 0.0005              # 卖出 0.05%
+  transfer_fee: 0.00001          # 双边 0.001%
+
+futures:
+  broker: ctp                    # ctp | paper
+  account_id: "REPLACE"
+  password: "REPLACE"
+  broker_id: "9999"              # simnow=9999
+  td_address: "tcp://180.168.146.187:10101"  # simnow 7x24
+  md_address: "tcp://180.168.146.187:10111"
+  app_id: "REPLACE"
+  auth_code: "REPLACE"
+
+slippage:
+  model: "volume_pct"            # volume_pct | bps | fixed
+  volume_pct: 0.1                # 假定成交量为日成交量的 10%
+  bps_floor: 5                   # 至少 5bps
+
+notification:
+  feishu_webhook: ""
+  dingtalk_webhook: ""
+  email:
+    smtp: "smtp.example.com"
+    user: ""
+    password: ""
+    to: []

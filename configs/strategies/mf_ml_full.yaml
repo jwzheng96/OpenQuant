@@ -1,0 +1,31 @@
+name: mf_ml_full
+version: "3.0"
+type: multi_factor
+enabled: false
+
+# Full-history ml_lgb backtest (ml_lgb retrained on panel 2022-01..2026-05,
+# with 12-month walk-forward CV so first prediction is 2023-01-01)
+factors:
+  - name: ml_lgb
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2023-01-03"        # first ml_lgb prediction date
+  end: "2026-05-25"          # latest data
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

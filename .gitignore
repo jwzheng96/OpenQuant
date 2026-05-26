@@ -1,0 +1,56 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.local
+
+# data
+data/
+*.parquet
+*.duckdb
+*.duckdb.wal
+
+# notebooks
+.ipynb_checkpoints/
+
+# config secrets
+configs/data_sources.yaml
+configs/trading.yaml
+
+# build
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# logs
+logs/
+*.log
+
+# tests
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# data + state
+data/parquet/
+data/uni_quant.duckdb
+data/uni_quant.duckdb.wal
+data/paper/
+data/paper_state/
+data/strict_holdout_report.json
+data/bear_2022_report.json
+data/factor_whitelist.json
+
+# secrets — already in .gitignore but double-check
+configs/data_sources.yaml
+configs/trading.yaml
+
+# tmp
+*.log
+.DS_Store

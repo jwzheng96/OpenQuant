@@ -1,0 +1,55 @@
+name: mf_top_alpha
+version: "0.3"
+type: multi_factor
+enabled: false
+
+universe: default
+
+# 顶 8 个 RankICIR > 2.5 的因子组合 (122 个因子中筛出)
+factors:
+  - name: gtja_a187            # open gap sum (-4.14)
+    weight: 0.20
+    direction: -1
+  - name: vol_20d              # 低波 (+3.74)
+    weight: 0.15
+    direction: 1
+  - name: size                 # 小市值 (+3.63)
+    weight: 0.15
+    direction: 1
+  - name: gtja_a150            # tp × vol (-3.45)
+    weight: 0.10
+    direction: -1
+  - name: gtja_a070            # std(amount, 6) (-3.37)
+    weight: 0.10
+    direction: -1
+  - name: alpha042             # vwap dev (+3.32)
+    weight: 0.10
+    direction: 1
+  - name: amihud_20d           # 流动性 (-2.88)
+    weight: 0.10
+    direction: 1                # 因子内已 negate
+  - name: bp                   # 账面市值比 (+2.00)
+    weight: 0.10
+    direction: 1
+
+neutralize:
+  industry: false
+  market_cap: false
+  styles: []
+
+selection:
+  top_n: 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08
+
+backtest:
+  start: "2022-06-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

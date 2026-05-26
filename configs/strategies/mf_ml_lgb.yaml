@@ -1,0 +1,33 @@
+name: mf_ml_lgb
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Single-factor strategy using the LightGBM composite (ml_lgb).
+# ml_lgb is trained via walk-forward CV in scripts/train_ml_composite.py:
+# each month's prediction uses 12 prior months. So this backtest IS
+# already OOS — no peeking.
+factors:
+  - name: ml_lgb
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false  # Pure ML signal; toggle to compare style-stripped variant
+
+selection:
+  top_n: 30                 # 573 universe → top 30 ≈ 5% selection rate
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2023-06-01"       # ml_lgb starts after 12m train lookback (2022-06 + 12m = 2023-06)
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

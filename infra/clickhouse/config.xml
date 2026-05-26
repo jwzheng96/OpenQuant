@@ -1,0 +1,4 @@
+<clickhouse>
+    <listen_host>0.0.0.0</listen_host>
+    <max_memory_usage>4000000000</max_memory_usage>
+</clickhouse>

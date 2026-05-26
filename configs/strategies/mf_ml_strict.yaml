@@ -1,0 +1,32 @@
+name: mf_ml_strict
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# True OOS backtest using strict-holdout model
+# Model trained ONLY on 2020-01 → 2023-12 with 5-day embargo
+# This backtest uses 2024-01 → 2026-05 (model never saw any of this data)
+factors:
+  - name: ml_lgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-25"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

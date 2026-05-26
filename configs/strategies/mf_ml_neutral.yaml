@@ -1,0 +1,30 @@
+name: mf_ml_neutral
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# ml_lgb with Barra-light style neutralization for honest alpha measurement
+factors:
+  - name: ml_lgb
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: true
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2023-06-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

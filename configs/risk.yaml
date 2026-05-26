@@ -1,0 +1,23 @@
+# 风控限额 — 三层防御
+strategy_level:
+  max_position_weight: 0.05      # 单票不超过 5%
+  max_signal_age_minutes: 30     # 信号超 30 分钟不再下单
+  min_universe_size: 200
+
+portfolio_level:
+  max_industry_weight: 0.25      # 单行业不超过 25%
+  max_style_exposure:            # 风格暴露上限 (z-score)
+    size: 1.0
+    beta: 0.5
+    momentum: 1.0
+    volatility: 1.0
+  max_daily_turnover: 0.3        # 日单边换手 30%
+  max_position_count: 50         # 最多持仓数
+
+account_level:
+  max_gross_exposure: 0.95       # 总持仓不超过 95% (留 5% 现金)
+  max_daily_loss_pct: 0.03       # 单日亏损 3% 熔断
+  max_drawdown_pct: 0.15         # 累计回撤 15% 熔断
+  circuit_breaker:
+    action: "flatten"            # flatten | hold | manual
+    notify: ["feishu", "email"]

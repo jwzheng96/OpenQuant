@@ -1,0 +1,26 @@
+name: event_earnings_drift
+version: "0.1"
+type: event_driven
+enabled: false
+
+universe: default
+
+event:
+  type: "earnings_surprise"      # 业绩超预期
+  source: "income"               # tushare income 表
+  surprise_threshold: 0.10       # YoY 利润增速 > 预期 10%
+  hold_days: 20                  # 持有 20 个交易日
+
+filters:
+  min_market_cap: 5.0e9
+  exclude_st: true
+
+position_sizing:
+  equal_weight: true
+  max_concurrent: 20
+
+backtest:
+  start: "2019-01-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

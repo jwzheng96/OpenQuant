@@ -1,0 +1,46 @@
+name: mf_lowvol_alpha
+version: "0.1"
+type: multi_factor
+enabled: false
+
+universe: default
+
+# 顶 4 个最显著的真实因子组合 (HS300-50 / 2022-2024 上 RankICIR 都 > 2.5)
+factors:
+  - name: vol_20d                  # 低波动 (RankICIR +3.74)
+    weight: 0.30
+    direction: 1
+  - name: alpha042                 # VWAP 偏离 (RankICIR +3.32)
+    weight: 0.25
+    direction: 1
+  - name: amihud_20d               # 流动性 (负向：选流动性差的会差)
+    weight: 0.20
+    direction: 1                   # 因子里已 negate 过
+  - name: alpha040                 # std(high) * corr(high, vol)
+    weight: 0.15
+    direction: 1
+  - name: mom_20d                  # 20日动量 — A 股反转方向
+    weight: 0.10
+    direction: -1                  # 显式反向 (RankICIR -2.29 → 选低动量)
+
+neutralize:
+  industry: false                  # 暂未拉行业数据
+  market_cap: false
+  styles: []
+
+selection:
+  top_n: 15                        # 50 only / select top 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08        # 单票上限 8% (15 只持仓)
+
+backtest:
+  start: "2022-06-01"              # 留出 6 个月预热期 (因子需要 60d 历史)
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

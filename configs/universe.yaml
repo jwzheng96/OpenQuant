@@ -1,0 +1,11 @@
+# 标的池规则
+default:
+  exchanges: ["SSE", "SZSE"]     # 不含北交所
+  exclude_st: true
+  exclude_suspended: true
+  exclude_new_listings_days: 60  # 上市不足 60 个交易日剔除
+  exclude_will_delist: true
+  min_market_cap: 2.0e9          # 流通市值 >= 20亿
+  min_avg_turnover_20d: 5.0e7    # 20日均成交额 >= 5000万
+  blacklist:
+    - "300999.SZ"                # 示例：手动黑名单

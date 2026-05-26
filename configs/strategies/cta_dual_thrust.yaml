@@ -1,0 +1,27 @@
+name: cta_dual_thrust
+version: "0.1"
+type: cta_trend
+enabled: false
+
+instruments:                     # 期货合约 (vnpy 命名)
+  - "IF888.CFFEX"                # 沪深300股指
+  - "IH888.CFFEX"                # 上证50股指
+  - "rb888.SHFE"                 # 螺纹钢
+  - "cu888.SHFE"                 # 铜
+
+params:
+  lookback: 20
+  k_upper: 0.5
+  k_lower: 0.5
+  exit_at_close: true            # 收盘前平仓 (避免隔夜跳空)
+
+position_sizing:
+  fixed_lots: 1
+  risk_per_trade_pct: 0.01       # 单笔风险 1%
+  atr_period: 14
+
+backtest:
+  start: "2019-01-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  bar: "1d"

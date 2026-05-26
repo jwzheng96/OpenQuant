@@ -1,0 +1,53 @@
+name: mf_diverse_neutral
+version: "0.4"
+type: multi_factor
+enabled: false
+
+universe: default
+
+# Same 7 factors as mf_diverse but with Barra-light style neutralization
+# (each factor's value is replaced with cross-sectional OLS residual after
+# regressing on log_mv, vol_60d, mom_120d, bp). Strips style beta from alpha.
+factors:
+  - name: vol_20d
+    weight: 0.20
+    direction: 1
+  - name: size
+    weight: 0.20
+    direction: 1
+  - name: alpha042
+    weight: 0.15
+    direction: 1
+  - name: amihud_20d
+    weight: 0.10
+    direction: 1
+  - name: bp
+    weight: 0.15
+    direction: 1
+  - name: alpha040
+    weight: 0.10
+    direction: 1
+  - name: mom_20d
+    weight: 0.10
+    direction: -1
+
+neutralize:
+  styles: ["log_mv", "vol_60d", "mom_120d", "bp"]
+  enabled: true
+
+selection:
+  top_n: 15
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.08
+
+backtest:
+  start: "2022-06-01"
+  end: "2024-12-31"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"
