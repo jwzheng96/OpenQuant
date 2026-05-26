@@ -5,39 +5,178 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-覆盖 **数据 → 因子 → 回测 → 实盘 → 监控** 的中国A股量化全栈框架。
-面向 50万–500万 个人资金，支持 多因子日频选股 + CTA趋势 + 事件驱动。
-内置可选的 LLM agent overlay（TradingAgents-style）作为量化选股后的"质量门"。
+覆盖 **数据 → 因子 → ML 模型 → 回测 → 实盘 → 监控** 的中国A股量化全栈框架。
+内置可选的 **LLM agent overlay**（TradingAgents 启发）作为量化选股后的"质量门"。
 
 > ⚠️ **本系统不承诺盈利**。它提供的是稳健的工程基础设施和正确的 A股微观摩擦建模，alpha 仍需自行研究。
+
+## 系统一览
+
+<pre class="mermaid">
+flowchart LR
+    subgraph DATA [数据层]
+        AK[AkShare] --> PARQ[(Parquet)]
+        TS[Tushare] --> PARQ
+        PARQ --> DUCK[(DuckDB)]
+    end
+    subgraph FACTOR [因子 / ML]
+        DUCK --> ENG[FactorEngine<br/>125 factors]
+        ENG --> LGB[ml_lgb LightGBM<br/>Walk-forward CV]
+    end
+    subgraph STRAT [策略]
+        LGB --> MFS[MultiFactorStrategy]
+        MFS -.optional.-> OV[Agent Overlay<br/>DeepSeek LLM]
+        OV -.KEEP/DROP/weight.-> MFS
+    end
+    subgraph EXEC [执行]
+        MFS --> BT[EventBacktester]
+        MFS --> PT[Paper Trading<br/>state-persisted]
+        PT --> REP[HTML 报告]
+    end
+</pre>
+
+详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+
+## 实测结果一览（OOS 严格 holdout，模型只见 2020-2023，测 2024-2026）
+
+| 策略 | 累计收益 | Sharpe | MDD | 对比 HS300 同期 |
+|---|---|---|---|---|
+| ml_lgb_strict (3.4年) | **+227.94%** | 1.40 | -23.8% | HS300 +26.59%，超额 +201pp |
+| ml_lgb_strict (2.4年 OOS) | **+100.35%** | 1.30 | -22.2% | HS300 +45.34%，超额 +55pp |
+| 2022 熊市压力测试 | **+12.85%** | 0.57 | -31.0% | HS300 **-21.27%**，超额 +34pp |
+| ml_lgb + Barra 中性化 | +29.37% | 0.71 | -27.6% | 真 alpha 部分（剥风格后）|
+
+详细方法学和警示：见 [RESULTS.md](RESULTS.md)
+
+## 数据资产
+
+| 类别 | 规模 |
+|---|---|
+| 股票池 | **574** 只（HS300 头 150 + ZZ500 全员 425 + 沪深300 指数）|
+| 日线 | **850k+** 行 / 2020-01-02 → 2026-05-25（**6.4 年**）|
+| 估值（PE/PB/MV）| **685k** 行 / 2021-05 起（akshare 近五年上限）|
+| 因子 | **125 个**（10 baseline + 57 Alpha101 + 55 GTJA Alpha191 + ml_lgb 系列）|
+| 测试 | 74/74 ✅ |
 
 ## 快速开始
 
 ```bash
-# 1. 装环境 (推荐 uv)
-uv venv && source .venv/bin/activate
+# 1. 环境（推荐 uv）
+uv venv -p 3.11 && source .venv/bin/activate
 uv pip install -e ".[dev]"
 
-# 2. 起依赖服务 (ClickHouse + Postgres + Grafana + Prefect)
-docker compose up -d
+# 2. 起依赖服务（可选，仅 paper/live 需要）
+docker compose up -d   # ClickHouse + Postgres + Grafana + Prefect
 
 # 3. 配置数据源
 cp configs/data_sources.example.yaml configs/data_sources.yaml
-# 编辑填入 Tushare token
+# 编辑填入 Tushare token + DeepSeek api_key（agent overlay 用）
 
-# 4. 初始化数据 (拉历史)
-open-quant data init --start 2018-01-01
+# 4. 初始化数据（拉历史，约 30-60 分钟）
+python scripts/sync_hs300_top50.py     # HS300 头部 50 只
+python scripts/sync_zz500.py           # 加上 ZZ500
+python scripts/sync_2025_2026.py       # 同步到今天
 
-# 5. 跑一个示例多因子策略回测
-open-quant backtest run --config configs/strategies/mf_value_momentum.yaml
+# 5. 训练 ml_lgb（5-10 分钟）
+python scripts/train_ml_composite.py
 
-# 6. paper trading
-open-quant live start --mode paper --strategy mf_value_momentum
+# 6. 跑严格 OOS 验证
+python scripts/train_strict_holdout.py
+
+# 7. 跑 paper trading
+python scripts/paper_daily.py \
+  --config configs/strategies/mf_ml_strict.yaml \
+  --from 2024-01-02 --to 2026-05-25 --reset
+
+# 8. 看 HTML 详细报告
+open data/paper_state/mf_ml_strict/report.html
 ```
 
-## 架构
+## CLI 速览
 
-见 [`docs/architecture.md`](docs/architecture.md)（暂略，参考 plan 文档）。
+```bash
+# 数据
+open-quant data init --start 2020-01-01
+open-quant data check
+open-quant data sync --dataset daily
+
+# 因子
+open-quant factor list           # 125 个因子列表
+open-quant factor eval mom_20d   # 单因子 IC 评估
+
+# 回测
+open-quant backtest run --config configs/strategies/mf_ml_strict.yaml
+
+# Agent overlay（LLM 二审）
+open-quant agents config         # 查看 LLM 配置
+open-quant agents test 600519.SH # 单股 4-agent 评估
+open-quant agents eval --from ... --to ...   # A/B 量化 vs LLM
+open-quant agents cache --clear
+```
+
+## 因子库
+
+按来源分（共 125 个）：
+
+| 类别 | 数量 | 内容 |
+|---|---|---|
+| **Baseline** | 10 | bp / ep / roe / size / mom_20d / mom_60d / reversal_5d / vol_20d / turnover_20d / amihud_20d |
+| **WorldQuant Alpha101** | 57 | 公式化 alpha（来自 arXiv:1601.00991） |
+| **国泰君安 Alpha191** | 55 | A 股本土量价因子，SMA Wilder 风格 |
+| **ML composite** | 3 | ml_lgb / ml_lgb_strict / ml_lgb_bear2022 |
+
+详见 `src/open_quant/factors/`。
+
+## A 股特有约束（已实现）
+
+- **T+1** 锁仓
+- **涨跌停**：沪深主板 10% / 创业板 + 科创板 20% / 北交所 30% / ST 5%（不同板块自动适配）
+- **停牌 / 退市** 标记
+- **复权**（前复权 / 后复权 / 不复权 — 涨跌停判定用不复权）
+- **印花税** 0.05%（卖出）+ **过户费** 0.001%（双边）+ 佣金可配
+- **集合竞价 vs 连续竞价** 时间窗
+- **滑点**（按成交量比例 / bps / 固定 三种模式）
+
+详见 [`src/open_quant/backtest/ashare_rules.py`](src/open_quant/backtest/ashare_rules.py)。
+
+## Agent Overlay（可选 — LLM 二审）
+
+在量化选出 top-N 候选股后，可选地用 LLM 评估每只是否值得留下：
+
+<pre class="mermaid">
+flowchart LR
+    Q[ml_lgb top-30] --> PF{pre_filter}
+    PF -->|蓝筹| K[auto-KEEP<br/>跳过 LLM]
+    PF -->|高风险| A[Analysts<br/>fundamentals + news]
+    A --> AGG{Aggregator}
+    AGG --> KEEP[KEEP]
+    AGG --> DROP[DROP]
+    KEEP --> P[组合]
+    K --> P
+</pre>
+
+```yaml
+# configs/strategies/your_strategy.yaml
+qualitative_overlay:
+  enabled: true                     # 一键开关
+  agents:
+    fundamentals: true              # 财务暴雷、估值异常
+    news: true                      # CLS 立案、财务差错更正
+    technical: false                # ml_lgb 已吃透，关掉
+  pre_filter:
+    only_risky: true                # 蓝筹自动 KEEP，节省 LLM 成本
+  decision:
+    veto_threshold: 0.85
+```
+
+**实测**：DeepSeek-V4-flash，单股 4 agent 调用约 ¥0.013，30 股池一年 ~¥98。
+
+**新闻来源**：
+- 财联社全球资讯（`stock_info_global_cls`）— 实时市场暴雷快讯
+- 财新主新闻（`stock_news_main_cx`）— 主流财经
+- 巨潮个股公告（`stock_zh_a_disclosure_report_cninfo`）— 财务差错 / 立案 / 重大事项
+
+详细 A/B 评估（4 轮迭代）：见 [RESULTS.md](RESULTS.md) 第 12 节。
 
 ## 模块速览
 
@@ -45,56 +184,24 @@ open-quant live start --mode paper --strategy mf_value_momentum
 |---|---|
 | `open_quant.data` | 数据采集、复权、标的池、A股日历 |
 | `open_quant.factors` | 因子计算引擎 + 因子库 + IC/IR 评估 |
-| `open_quant.risk` | Barra 风险模型 + 中性化 + 风控限额 |
-| `open_quant.portfolio` | 组合优化器 + 调仓 |
-| `open_quant.strategies` | 多因子 / CTA / 事件驱动 |
-| `open_quant.backtest` | vectorbt 研究层 + 自研 A股精确事件回测 |
-| `open_quant.execution` | OMS + QMT/CTP/Paper broker |
-| `open_quant.monitor` | Prometheus 指标 + 飞书告警 + 日报 |
-| `open_quant.pipelines` | Prefect 调度的盘前/盘中/盘后任务 |
+| `open_quant.backtest` | A 股精确事件回测 + 成本模型 + 微观规则 |
+| `open_quant.strategies` | 多因子日频 / Dual Thrust CTA / 业绩驱动 |
+| `open_quant.portfolio` | 组合优化器（cvxpy）+ Barra 风格暴露 |
+| `open_quant.execution` | OMS + PaperBroker / QMT / CTP 桥 |
+| `open_quant.monitor` | Prometheus 指标 + 飞书告警 + HTML 日报 |
+| `open_quant.agents` | LLM 二审（toolkit / overlay / prompts）|
+| `open_quant.paper_state` | Paper trading 状态持久化 (JSON) |
 
-## A股特有约束（已实现）
+## 文档
 
-- T+1
-- 涨跌停 (沪深主板/创业板/科创板/北交所/ST 各档)
-- 停牌 / 退市
-- 复权 (前复权 / 后复权 / 不复权 — 涨跌停判定用不复权)
-- 印花税 (卖 0.05%) + 过户费 (双边 0.001%) + 佣金 (可配)
-- 集合竞价 vs 连续竞价时间窗
-- 滑点 (按成交量比例)
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — 系统架构 + 流程图
+- [RESULTS.md](RESULTS.md) — 完整实测结果 + 方法学
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 贡献指南
+- [notebooks/01_quickstart.ipynb](notebooks/01_quickstart.ipynb) — 5 分钟上手 demo
 
-## Agent Overlay (可选功能 — feat/trading-agents 分支)
+## License
 
-把 LLM 当成"量化选股后的二审"，过滤掉有暴雷新闻/基本面崩坏/技术形态破位的票：
+[Apache License 2.0](LICENSE)。
 
-```yaml
-# configs/strategies/your_strategy.yaml
-qualitative_overlay:
-  enabled: true                # 一键开关
-  agents:
-    fundamentals: true         # 基本面分析师
-    news: true                 # 新闻分析师
-    technical: true            # 技术分析师
-  llm:
-    provider: deepseek         # 用 DeepSeek-V4-flash (~¥0.003/股/天)
-  decision:
-    veto_threshold: 0.7        # 任何 agent SELL 且 conf ≥ 0.7 → 强否决
-```
-
-CLI 工具：
-```bash
-open-quant agents config              # 查看 LLM 配置
-open-quant agents test 600519.SH      # 单股 4-agent 评估（debug 用）
-open-quant agents eval --from 2025-08-01 --to 2025-09-30  # A/B 量化 vs +LLM
-open-quant agents cache               # 查看 / 清理决策缓存
-```
-
-成本估算（DeepSeek-V4-flash 公开价格）：
-- 单股单日 4 个 agent：~¥0.013
-- 30 股池 × 252 交易日：**~¥98/年**
-
-详见 `src/open_quant/agents/`。
-
-## 法律声明
-
-本项目仅供学习和**自营**资金研究。不构成投资建议，不接受任何形式的代客理财。
+本项目仅供研究和自营资金量化策略开发使用，**不构成投资建议**。
+任何在实盘使用本系统造成的资金损失，**项目维护者不承担任何责任**。
