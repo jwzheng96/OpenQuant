@@ -45,10 +45,13 @@ jobs:
       - name: Install test dependencies
         # Minimal set required by tests/ — avoids heavy deps (cvxpy, vectorbt,
         # prefect, lightgbm) that aren't exercised by the unit tests.
-        # Order matters: install hatchling FIRST so editable build picks up
-        # subpackages correctly on Python 3.12 (PEP 660 hook).
+        #
+        # hatchling + editables are needed at build time for PEP 660 editable
+        # installs (`editables` is hatchling's optional sub-dep, not pulled
+        # in by `pip install hatchling`).  We use --no-build-isolation so the
+        # editable build uses these pre-installed copies.
         run: |
-          uv pip install --system "hatchling>=1.20"
+          uv pip install --system "hatchling>=1.20" "editables>=0.5"
           uv pip install --system \
             "numpy>=1.26" "polars>=1.0" "pandas>=2.2" "pyarrow>=15.0" "duckdb>=1.0" \
             "pydantic>=2.7" "pydantic-settings>=2.3" "pyyaml>=6.0" \
