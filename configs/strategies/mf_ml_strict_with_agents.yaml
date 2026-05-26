@@ -1,0 +1,60 @@
+name: mf_ml_strict_with_agents
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Same quant signal as mf_ml_strict (ml_lgb trained 2020-23, OOS 2024-26)
+# but with LLM-based qualitative overlay enabled.
+factors:
+  - name: ml_lgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+# ---- LLM agent overlay (toggle here) ----
+qualitative_overlay:
+  enabled: true                # ← flip to false for pure quant baseline
+  agents:
+    fundamentals: true
+    news: true
+    technical: true
+    sentiment: false           # 爬虫不稳，初版关
+  llm:
+    provider: deepseek
+    # model + api_key 从 configs/data_sources.yaml 读
+  decision:
+    mode: filter               # filter (KEEP/DROP) | weight (multiplier)
+    veto_threshold: 0.85       # 提高门槛 — 只有"高度确信卖"才强制 DROP
+  pre_filter:
+    only_risky: true           # 蓝筹自动 KEEP，节省 LLM 成本
+    risky_boards: [chinext, star, bse, unknown]
+    min_market_cap_yi: 100      # 100亿以下视为小市值
+    max_return_20d: 0.30        # 20日涨跌 ±30% 以外
+    max_pe_ttm: 80
+    max_pb: 10
+    st_always_risky: true
+  cache:
+    dir: data/agents_cache
+    ttl_days: 7
+  toolkit:
+    kind: hybrid               # akshare | tushare | hybrid
+  max_workers: 4               # parallel symbol evaluation
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-25"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

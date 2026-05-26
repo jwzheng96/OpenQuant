@@ -23,6 +23,15 @@ class AkShareConfig(BaseModel):
     rate_limit_per_minute: int = 200
 
 
+class DeepSeekConfig(BaseModel):
+    api_key: str = ""
+    model: str = "deepseek-chat"
+    base_url: str = "https://api.deepseek.com/v1"
+    temperature: float = 0.3
+    max_tokens: int = 1500
+    timeout: float = 60.0
+
+
 class StorageConfig(BaseModel):
     parquet_root: str = "./data/parquet"
     duckdb_path: str = "./data/uni_quant.duckdb"
@@ -33,6 +42,7 @@ class StorageConfig(BaseModel):
 class DataSourcesConfig(BaseModel):
     tushare: TushareConfig = Field(default_factory=TushareConfig)
     akshare: AkShareConfig = Field(default_factory=AkShareConfig)
+    deepseek: DeepSeekConfig = Field(default_factory=DeepSeekConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     datasets: dict[str, Any] = Field(default_factory=dict)
 

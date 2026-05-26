@@ -55,12 +55,20 @@ def _parse_date(s: str) -> date:
 def load_strategy(config_path: Path) -> tuple[MultiFactorStrategy, dict]:
     cfg = yaml.safe_load(Path(config_path).read_text())
     factors = [FactorWeight(**f) for f in cfg.get("factors", [])]
+
+    overlay = None
+    overlay_cfg = cfg.get("qualitative_overlay") or {}
+    if overlay_cfg.get("enabled"):
+        from uni_quant.agents import QualitativeOverlay
+        overlay = QualitativeOverlay.from_config(overlay_cfg)
+
     strat = MultiFactorStrategy(
         factors=factors,
         top_n=cfg.get("selection", {}).get("top_n", 30),
         rebalance_freq=cfg.get("rebalance", {}).get("frequency", "W-FRI"),
         max_weight=cfg.get("risk_overrides", {}).get("max_position_weight", 0.05),
         neutralize_styles=cfg.get("neutralize", {}).get("enabled", False),
+        qualitative_overlay=overlay,
     )
     return strat, cfg
 

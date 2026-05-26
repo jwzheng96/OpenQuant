@@ -54,12 +54,34 @@ def _parse_date(s: str) -> date:
 def load_strategy(config_path: Path) -> tuple[MultiFactorStrategy, dict]:
     cfg = yaml.safe_load(Path(config_path).read_text())
     factors = [FactorWeight(**f) for f in cfg.get("factors", [])]
+
+    # Build optional qualitative overlay if enabled in yaml
+    overlay = None
+    overlay_log = []
+    overlay_cfg = cfg.get("qualitative_overlay") or {}
+    if overlay_cfg.get("enabled"):
+        from uni_quant.agents import QualitativeOverlay
+        log.info("qualitative_overlay enabled — building agent layer")
+        overlay = QualitativeOverlay.from_config(overlay_cfg)
+
+        def _log_decisions(d, decisions):
+            kept = sum(1 for x in decisions.values() if x.action == "KEEP")
+            dropped = sum(1 for x in decisions.values() if x.action == "DROP")
+            overlay_log.append({"date": str(d), "kept": kept, "dropped": dropped,
+                                "drops": {s: x.rationale[:120] for s, x in decisions.items()
+                                          if x.action == "DROP"}})
+            log.info(f"overlay {d}: kept={kept} dropped={dropped}")
+
+        cfg["_overlay_log"] = overlay_log  # so caller can persist
+
     strat = MultiFactorStrategy(
         factors=factors,
         top_n=cfg.get("selection", {}).get("top_n", 30),
         rebalance_freq=cfg.get("rebalance", {}).get("frequency", "W-FRI"),
         max_weight=cfg.get("risk_overrides", {}).get("max_position_weight", 0.05),
         neutralize_styles=cfg.get("neutralize", {}).get("enabled", False),
+        qualitative_overlay=overlay,
+        on_overlay_decisions=(_log_decisions if overlay else None),
     )
     return strat, cfg
 
