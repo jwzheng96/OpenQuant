@@ -117,43 +117,37 @@ class AkShareToolkit:
     # -- news ----------------------------------------------------------------
 
     def get_news(self, ts_code: str, *, days: int = 7, limit: int = 8) -> list[NewsItem]:
-        import akshare as ak
-        code = _code_part(ts_code)
-        try:
-            df = ak.stock_news_em(symbol=code)
-        except Exception as e:
-            return [NewsItem(
-                timestamp=datetime.now().isoformat(timespec="seconds"),
-                title=f"[FETCH FAILED] {e}", summary="",
-                source="akshare_em_failed",
-            )]
-        if df is None or len(df) == 0:
-            return []
+        """Multi-source news fetch — combines 3 AkShare endpoints:
+          1. 财联社全球资讯  (stock_info_global_cls)  → 实时市场快讯，含完整内容
+          2. 财新主新闻      (stock_news_main_cx)     → 主流财经
+          3. 巨潮个股公告    (stock_zh_a_disclosure_report_cninfo) → 官方披露
 
-        # AkShare columns: 关键词, 新闻标题, 新闻内容, 发布时间, 文章来源, 新闻链接
+        Market-wide sources (1, 2) are cached for 1 hour and filtered by symbol
+        code AND company name. Per-stock source (3) is fetched on demand.
+        """
+        code = _code_part(ts_code)
+        name = _get_stock_name(ts_code)
         cutoff = datetime.now() - timedelta(days=days)
         items: list[NewsItem] = []
-        for _, row in df.head(limit * 3).iterrows():    # over-fetch then filter
-            ts_raw = row.get("发布时间", "")
-            try:
-                ts_dt = datetime.fromisoformat(str(ts_raw).replace(" ", "T"))
-            except Exception:
-                ts_dt = datetime.now()
-            if ts_dt < cutoff:
+
+        # Source 1: 财联社 market-wide
+        items += _fetch_cls_filtered(code, name, cutoff)
+        # Source 2: 财新主新闻
+        items += _fetch_caixin_filtered(code, name, cutoff)
+        # Source 3: 公告
+        items += _fetch_cninfo_notices(ts_code, code, cutoff, days)
+
+        # Dedupe by title (first 60 chars) + sort by timestamp desc
+        seen: set[str] = set()
+        unique: list[NewsItem] = []
+        for it in items:
+            key = it.title[:60]
+            if key in seen or not it.title:
                 continue
-            title = str(row.get("新闻标题", "")).strip()
-            content = str(row.get("新闻内容", "")).strip()
-            # Truncate long content
-            summary = content[:300] + ("…" if len(content) > 300 else "")
-            items.append(NewsItem(
-                timestamp=ts_dt.isoformat(timespec="seconds"),
-                title=title, summary=summary,
-                source="akshare_em",
-                url=str(row.get("新闻链接", "")) or None,
-            ))
-            if len(items) >= limit:
-                break
-        return items
+            seen.add(key)
+            unique.append(it)
+        unique.sort(key=lambda x: x.timestamp, reverse=True)
+        return unique[:limit]
 
     # -- fundamentals --------------------------------------------------------
 
@@ -462,6 +456,176 @@ class HybridToolkit:
 # ---------------------------------------------------------------------------- #
 # Helpers                                                                      #
 # ---------------------------------------------------------------------------- #
+
+
+# ---------------------------------------------------------------------------- #
+# Market-wide news caches (CLS / 财新) — fetched once, filtered per stock.      #
+# ---------------------------------------------------------------------------- #
+
+_NEWS_CACHE_DIR = "data/agents_cache/_market_news"
+_NEWS_CACHE_TTL_MIN = 60   # refresh every hour during live runs
+
+
+def _market_cache_get(source: str) -> list[dict] | None:
+    """Return cached list of dicts for a market-wide news source, if fresh."""
+    import json as _json
+    from pathlib import Path as _P
+    from datetime import datetime as _dt, timedelta as _td
+    p = _P(_NEWS_CACHE_DIR) / f"{source}.json"
+    if not p.exists():
+        return None
+    try:
+        data = _json.loads(p.read_text())
+        cached_at = _dt.fromisoformat(data["_cached_at"])
+        if _dt.now() - cached_at > _td(minutes=_NEWS_CACHE_TTL_MIN):
+            return None
+        return data.get("rows") or []
+    except Exception:
+        return None
+
+
+def _market_cache_put(source: str, rows: list[dict]) -> None:
+    import json as _json
+    from pathlib import Path as _P
+    from datetime import datetime as _dt
+    p = _P(_NEWS_CACHE_DIR) / f"{source}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(_json.dumps({
+        "_cached_at": _dt.now().isoformat(timespec="seconds"),
+        "rows": rows,
+    }, ensure_ascii=False))
+
+
+def _get_stock_name(ts_code: str) -> str:
+    """Look up company name from the stock_info cache."""
+    info = _info_cache_get(_code_part(ts_code))
+    if info:
+        return info.get("name") or ""
+    return ""
+
+
+def _matches_stock(text: str, code: str, name: str) -> bool:
+    """Heuristic: does this news item mention the target stock?"""
+    if not text:
+        return False
+    if code and code in text:
+        return True
+    if name and len(name) >= 2 and name in text:
+        return True
+    return False
+
+
+def _fetch_cls_filtered(code: str, name: str, cutoff: datetime) -> list[NewsItem]:
+    """Fetch 财联社 market-wide news + filter by stock code/name."""
+    cached = _market_cache_get("cls")
+    if cached is None:
+        try:
+            import akshare as ak
+            df = ak.stock_info_global_cls()
+            if df is None or len(df) == 0:
+                _market_cache_put("cls", [])
+                return []
+            cached = []
+            for _, row in df.iterrows():
+                pub_date = str(row.get("发布日期", ""))
+                pub_time = str(row.get("发布时间", ""))
+                ts = f"{pub_date}T{pub_time}" if pub_date and pub_time else datetime.now().isoformat()
+                cached.append({
+                    "ts": ts,
+                    "title": str(row.get("标题", "")).strip(),
+                    "content": str(row.get("内容", "")).strip(),
+                })
+            _market_cache_put("cls", cached)
+        except Exception:
+            return []
+
+    out: list[NewsItem] = []
+    for r in cached:
+        try:
+            ts_dt = datetime.fromisoformat(r["ts"])
+        except Exception:
+            continue
+        if ts_dt < cutoff:
+            continue
+        text = r["title"] + " " + r["content"][:200]
+        if not _matches_stock(text, code, name):
+            continue
+        summary = r["content"][:300] + ("…" if len(r["content"]) > 300 else "")
+        out.append(NewsItem(
+            timestamp=ts_dt.isoformat(timespec="seconds"),
+            title=r["title"], summary=summary, source="cls",
+        ))
+    return out
+
+
+def _fetch_caixin_filtered(code: str, name: str, cutoff: datetime) -> list[NewsItem]:
+    """Fetch 财新 main news + filter by stock code/name."""
+    cached = _market_cache_get("caixin")
+    if cached is None:
+        try:
+            import akshare as ak
+            df = ak.stock_news_main_cx()
+            if df is None or len(df) == 0:
+                _market_cache_put("caixin", [])
+                return []
+            cached = []
+            for _, row in df.iterrows():
+                cached.append({
+                    "ts": datetime.now().isoformat(timespec="seconds"),  # 财新没明确时间，用 fetch 时间
+                    "tag": str(row.get("tag", "")),
+                    "summary": str(row.get("summary", "")).strip(),
+                    "url": str(row.get("url", "")),
+                })
+            _market_cache_put("caixin", cached)
+        except Exception:
+            return []
+
+    out: list[NewsItem] = []
+    for r in cached:
+        text = r["tag"] + " " + r["summary"]
+        if not _matches_stock(text, code, name):
+            continue
+        # 财新 returns 'tag' as summary-style title + summary as body
+        out.append(NewsItem(
+            timestamp=r["ts"], title=r["tag"][:80],
+            summary=r["summary"][:300], source="caixin",
+            url=r.get("url") or None,
+        ))
+    return out
+
+
+def _fetch_cninfo_notices(ts_code: str, code: str, cutoff: datetime, days: int) -> list[NewsItem]:
+    """Fetch per-stock official 公告 from 巨潮 (cninfo)."""
+    try:
+        import akshare as ak
+        start = (cutoff).strftime("%Y%m%d")
+        end = datetime.now().strftime("%Y%m%d")
+        df = ak.stock_zh_a_disclosure_report_cninfo(
+            symbol=code, market="沪深京",
+            start_date=start, end_date=end,
+        )
+        if df is None or len(df) == 0:
+            return []
+        out: list[NewsItem] = []
+        for _, row in df.head(20).iterrows():
+            ann_time = str(row.get("公告时间", ""))
+            try:
+                # cninfo time format: YYYY-MM-DD HH:MM
+                ts_dt = datetime.fromisoformat(ann_time.replace(" ", "T"))
+            except Exception:
+                ts_dt = datetime.now()
+            if ts_dt < cutoff:
+                continue
+            title = str(row.get("公告标题", "")).strip()
+            url = str(row.get("公告链接", "")) or None
+            out.append(NewsItem(
+                timestamp=ts_dt.isoformat(timespec="seconds"),
+                title=title, summary="（官方公告）",
+                source="cninfo_notice", url=url,
+            ))
+        return out
+    except Exception:
+        return []
 
 
 # ---------------------------------------------------------------------------- #

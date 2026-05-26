@@ -378,6 +378,72 @@ class TestOverlayDecisionLogic:
 # ============================================================================ #
 
 
+class TestMultiSourceNews:
+    """Multi-source news pipeline tests (CLS / 财新 / 公告) — pure logic, no network."""
+
+    def test_matches_stock_by_code(self):
+        from open_quant.agents.toolkit import _matches_stock
+        assert _matches_stock("北方稀土600111涨停", "600111", "")
+        assert not _matches_stock("沪指上涨1%", "600111", "")
+
+    def test_matches_stock_by_name(self):
+        from open_quant.agents.toolkit import _matches_stock
+        assert _matches_stock("贵州茅台发布业绩", "", "贵州茅台")
+        assert not _matches_stock("白酒板块上涨", "", "贵州茅台")
+
+    def test_matches_stock_empty(self):
+        from open_quant.agents.toolkit import _matches_stock
+        assert not _matches_stock("", "600519", "贵州茅台")
+        assert not _matches_stock("text", "", "")
+
+    def test_matches_stock_short_name_skipped(self):
+        from open_quant.agents.toolkit import _matches_stock
+        assert not _matches_stock("any text containing X", "", "X")
+
+    def test_market_cache_roundtrip(self, tmp_path, monkeypatch):
+        from open_quant.agents import toolkit as tk
+        monkeypatch.setattr(tk, "_NEWS_CACHE_DIR", str(tmp_path))
+        tk._market_cache_put("test_src", [{"a": 1}, {"a": 2}])
+        assert tk._market_cache_get("test_src") == [{"a": 1}, {"a": 2}]
+
+    def test_market_cache_ttl_zero(self, tmp_path, monkeypatch):
+        import time
+        from open_quant.agents import toolkit as tk
+        monkeypatch.setattr(tk, "_NEWS_CACHE_DIR", str(tmp_path))
+        monkeypatch.setattr(tk, "_NEWS_CACHE_TTL_MIN", 0)
+        tk._market_cache_put("test_src", [{"x": "stale"}])
+        time.sleep(0.05)
+        assert tk._market_cache_get("test_src") is None
+
+    def test_cls_filter_uses_cache(self, tmp_path, monkeypatch):
+        from datetime import datetime
+        from open_quant.agents import toolkit as tk
+        monkeypatch.setattr(tk, "_NEWS_CACHE_DIR", str(tmp_path))
+        tk._market_cache_put("cls", [{
+            "ts": "2026-05-26T10:00:00",
+            "title": "林州重机：证监会决定对公司立案调查",
+            "content": "财联社5月26日电，林州重机(002535.SZ)公告称...",
+        }])
+        cutoff = datetime(2026, 5, 1)
+        hits = tk._fetch_cls_filtered("002535", "林州重机", cutoff)
+        assert len(hits) == 1
+        assert "林州重机" in hits[0].title
+        assert hits[0].source == "cls"
+        # Different stock should not match
+        assert tk._fetch_cls_filtered("600519", "贵州茅台", cutoff) == []
+
+    def test_cls_filter_respects_cutoff(self, tmp_path, monkeypatch):
+        from datetime import datetime
+        from open_quant.agents import toolkit as tk
+        monkeypatch.setattr(tk, "_NEWS_CACHE_DIR", str(tmp_path))
+        tk._market_cache_put("cls", [{
+            "ts": "2024-01-01T10:00:00",
+            "title": "贵州茅台发布业绩", "content": "..."
+        }])
+        cutoff = datetime(2026, 5, 1)
+        assert tk._fetch_cls_filtered("600519", "贵州茅台", cutoff) == []
+
+
 class TestStrategyToggle:
     def test_overlay_field_default_none(self):
         from open_quant.strategies import FactorWeight, MultiFactorStrategy
