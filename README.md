@@ -57,6 +57,38 @@ uni-quant live start --mode paper --strategy mf_value_momentum
 - 集合竞价 vs 连续竞价时间窗
 - 滑点 (按成交量比例)
 
+## Agent Overlay (可选功能 — feat/trading-agents 分支)
+
+把 LLM 当成"量化选股后的二审"，过滤掉有暴雷新闻/基本面崩坏/技术形态破位的票：
+
+```yaml
+# configs/strategies/your_strategy.yaml
+qualitative_overlay:
+  enabled: true                # 一键开关
+  agents:
+    fundamentals: true         # 基本面分析师
+    news: true                 # 新闻分析师
+    technical: true            # 技术分析师
+  llm:
+    provider: deepseek         # 用 DeepSeek-V4-flash (~¥0.003/股/天)
+  decision:
+    veto_threshold: 0.7        # 任何 agent SELL 且 conf ≥ 0.7 → 强否决
+```
+
+CLI 工具：
+```bash
+uni-quant agents config              # 查看 LLM 配置
+uni-quant agents test 600519.SH      # 单股 4-agent 评估（debug 用）
+uni-quant agents eval --from 2025-08-01 --to 2025-09-30  # A/B 量化 vs +LLM
+uni-quant agents cache               # 查看 / 清理决策缓存
+```
+
+成本估算（DeepSeek-V4-flash 公开价格）：
+- 单股单日 4 个 agent：~¥0.013
+- 30 股池 × 252 交易日：**~¥98/年**
+
+详见 `src/uni_quant/agents/`。
+
 ## 法律声明
 
 本项目仅供学习和**自营**资金研究。不构成投资建议，不接受任何形式的代客理财。
