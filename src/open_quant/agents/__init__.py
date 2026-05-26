@@ -8,13 +8,13 @@ Toggle via strategy yaml `qualitative_overlay.enabled: true`. When the section
 is absent or `enabled: false`, strategy behavior is unchanged (zero overhead).
 """
 
-from uni_quant.agents.llm_client import DeepSeekClient, LLMClient
-from uni_quant.agents.overlay import (
+from open_quant.agents.llm_client import DeepSeekClient, LLMClient
+from open_quant.agents.overlay import (
     OverlayDecision,
     OverlayStats,
     QualitativeOverlay,
 )
-from uni_quant.agents.toolkit import (
+from open_quant.agents.toolkit import (
     AkShareToolkit,
     HybridToolkit,
     NewsItem,

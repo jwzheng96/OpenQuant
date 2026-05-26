@@ -23,7 +23,7 @@ from typing import Any
 import httpx
 from prometheus_client import Counter, Gauge, start_http_server
 
-from uni_quant.utils import get_logger
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 
@@ -38,16 +38,16 @@ class Metrics:
 
     _started = False
 
-    orders_submitted = Counter("uni_quant_orders_submitted_total", "orders submitted", ["strategy", "side"])
-    orders_filled = Counter("uni_quant_orders_filled_total", "orders filled", ["strategy", "side"])
-    orders_rejected = Counter("uni_quant_orders_rejected_total", "orders rejected", ["strategy", "reason"])
-    nav = Gauge("uni_quant_nav", "current strategy NAV", ["strategy"])
-    cash = Gauge("uni_quant_cash", "current cash", ["strategy"])
-    position_count = Gauge("uni_quant_position_count", "open positions", ["strategy"])
-    daily_pnl = Gauge("uni_quant_daily_pnl", "intraday P&L", ["strategy"])
-    drawdown = Gauge("uni_quant_drawdown", "current drawdown from peak", ["strategy"])
-    data_sync_lag_sec = Gauge("uni_quant_data_sync_lag_seconds", "data freshness", ["dataset"])
-    risk_event = Counter("uni_quant_risk_events_total", "risk events", ["rule", "severity"])
+    orders_submitted = Counter("open_quant_orders_submitted_total", "orders submitted", ["strategy", "side"])
+    orders_filled = Counter("open_quant_orders_filled_total", "orders filled", ["strategy", "side"])
+    orders_rejected = Counter("open_quant_orders_rejected_total", "orders rejected", ["strategy", "reason"])
+    nav = Gauge("open_quant_nav", "current strategy NAV", ["strategy"])
+    cash = Gauge("open_quant_cash", "current cash", ["strategy"])
+    position_count = Gauge("open_quant_position_count", "open positions", ["strategy"])
+    daily_pnl = Gauge("open_quant_daily_pnl", "intraday P&L", ["strategy"])
+    drawdown = Gauge("open_quant_drawdown", "current drawdown from peak", ["strategy"])
+    data_sync_lag_sec = Gauge("open_quant_data_sync_lag_seconds", "data freshness", ["dataset"])
+    risk_event = Counter("open_quant_risk_events_total", "risk events", ["rule", "severity"])
 
     @classmethod
     def start(cls, port: int = 9101) -> None:
@@ -106,7 +106,7 @@ class AlertManager:
             return
         try:
             msg = EmailMessage()
-            msg["Subject"] = f"[uni_quant] {title}"
+            msg["Subject"] = f"[open_quant] {title}"
             msg["From"] = cfg["user"]
             msg["To"] = ", ".join(cfg["to"])
             msg.set_content(body)
@@ -530,7 +530,7 @@ def _render_full_report(
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>uni-quant 回测报告 — {strategy}</title>
+<title>open-quant 回测报告 — {strategy}</title>
 <style>
 * {{ box-sizing: border-box; }}
 body {{
@@ -573,7 +573,7 @@ tr:hover td {{ background: #f8fafc; }}
 </head>
 <body>
 
-<h1>uni-quant 回测报告 — <span style="color:#2563eb">{strategy}</span></h1>
+<h1>open-quant 回测报告 — <span style="color:#2563eb">{strategy}</span></h1>
 <div class="subtitle">期间 {stats['start_date']} → {stats['end_date']} ｜
                      初始资金 {money(stats['initial_cash'])} ｜
                      终值 {money(stats['final_nav'])} ｜

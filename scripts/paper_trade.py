@@ -9,7 +9,7 @@ Modes:
   --mode live --date YYYY-MM-DD
      One-shot live-style invocation for a single date — pulls the latest panel,
      generates target weights at "open", submits to PaperBroker. Practical use
-     is via cron / Prefect schedule (`uni-quant live start --mode paper`).
+     is via cron / Prefect schedule (`open-quant live start --mode paper`).
 
 End of run:
   - Daily NAV / fills written to Postgres (or local SQLite fallback).
@@ -32,18 +32,18 @@ from pathlib import Path
 import polars as pl
 import yaml
 
-from uni_quant.backtest import EventBacktester, BacktestConfig
-from uni_quant.data.api import get_data_api
-from uni_quant.data.universe import annotate_for_backtest
-from uni_quant.execution import (
+from open_quant.backtest import EventBacktester, BacktestConfig
+from open_quant.data.api import get_data_api
+from open_quant.data.universe import annotate_for_backtest
+from open_quant.execution import (
     Order,
     OrderManagementSystem,
     OrderType,
     PaperBroker,
 )
-from uni_quant.monitor import AlertManager, Metrics, daily_report
-from uni_quant.strategies import FactorWeight, MultiFactorStrategy
-from uni_quant.utils import get_logger, load_settings
+from open_quant.monitor import AlertManager, Metrics, daily_report
+from open_quant.strategies import FactorWeight, MultiFactorStrategy
+from open_quant.utils import get_logger, load_settings
 
 log = get_logger(__name__)
 
@@ -59,7 +59,7 @@ def load_strategy(config_path: Path) -> tuple[MultiFactorStrategy, dict]:
     overlay = None
     overlay_cfg = cfg.get("qualitative_overlay") or {}
     if overlay_cfg.get("enabled"):
-        from uni_quant.agents import QualitativeOverlay
+        from open_quant.agents import QualitativeOverlay
         overlay = QualitativeOverlay.from_config(overlay_cfg)
 
     strat = MultiFactorStrategy(

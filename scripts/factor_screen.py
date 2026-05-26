@@ -8,8 +8,8 @@ from datetime import date
 import numpy as np
 import polars as pl
 
-from uni_quant.data.api import get_data_api
-from uni_quant.factors import default_engine, evaluate_factor
+from open_quant.data.api import get_data_api
+from open_quant.factors import default_engine, evaluate_factor
 
 START = date(2022, 6, 1)
 END = date(2024, 12, 31)

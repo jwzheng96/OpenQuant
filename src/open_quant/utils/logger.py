@@ -28,7 +28,7 @@ def _configure(log_dir: Path | None = None, level: str = "INFO") -> None:
     if log_dir:
         log_dir.mkdir(parents=True, exist_ok=True)
         _logger.add(
-            log_dir / "uni_quant_{time:YYYY-MM-DD}.log",
+            log_dir / "open_quant_{time:YYYY-MM-DD}.log",
             rotation="00:00",
             retention="30 days",
             level=level,

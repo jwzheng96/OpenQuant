@@ -18,11 +18,11 @@ import sys
 import time
 from datetime import date
 
-from uni_quant.agents.cache import DecisionCache
-from uni_quant.agents.llm_client import DeepSeekClient
-from uni_quant.agents.prompts import get_prompts
-from uni_quant.agents.toolkit import HybridToolkit
-from uni_quant.utils import get_logger
+from open_quant.agents.cache import DecisionCache
+from open_quant.agents.llm_client import DeepSeekClient
+from open_quant.agents.prompts import get_prompts
+from open_quant.agents.toolkit import HybridToolkit
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 

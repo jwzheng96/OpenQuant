@@ -27,9 +27,9 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
-from uni_quant.data.api import get_data_api
-from uni_quant.data.universe import annotate_for_backtest
-from uni_quant.factors import default_engine
+from open_quant.data.api import get_data_api
+from open_quant.data.universe import annotate_for_backtest
+from open_quant.factors import default_engine
 
 # Training window (no peek at 2024+)
 TRAIN_START = date(2020, 1, 1)

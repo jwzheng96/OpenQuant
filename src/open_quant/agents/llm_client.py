@@ -19,7 +19,7 @@ from typing import Any, Protocol
 import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from uni_quant.utils import get_logger
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 
@@ -81,7 +81,7 @@ class DeepSeekClient:
         cfg_base_url = None
         cfg_timeout = None
         try:
-            from uni_quant.utils import load_settings
+            from open_quant.utils import load_settings
             cfg = load_settings().data_sources.deepseek
             cfg_api_key = cfg.api_key or None
             cfg_model = cfg.model or None

@@ -39,8 +39,8 @@ htmlcov/
 
 # data + state
 data/parquet/
-data/uni_quant.duckdb
-data/uni_quant.duckdb.wal
+data/open_quant.duckdb
+data/open_quant.duckdb.wal
 data/paper/
 data/paper_state/
 data/strict_holdout_report.json

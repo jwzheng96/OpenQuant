@@ -7,7 +7,7 @@ Schedules (Asia/Shanghai):
   - 09:25→15:00  live_loop   : poll OMS, push metrics, run risk checks
   - 15:30  eod_recon         : daily pnl, reconcile, send report
 
-These functions are runnable directly (`python -m uni_quant.pipelines daily`) or
+These functions are runnable directly (`python -m open_quant.pipelines daily`) or
 served via `prefect deploy`. They are kept thin — heavy logic lives in domain
 modules.
 """
@@ -25,9 +25,9 @@ except ImportError:  # allow import without prefect at unit-test time
     def task(fn=None, **_):  # type: ignore
         return fn if fn else lambda f: f
 
-from uni_quant.data import get_data_api
-from uni_quant.factors import default_engine
-from uni_quant.utils import get_logger, load_settings
+from open_quant.data import get_data_api
+from open_quant.factors import default_engine
+from open_quant.utils import get_logger, load_settings
 
 log = get_logger(__name__)
 
@@ -115,4 +115,4 @@ if __name__ == "__main__":
     elif len(sys.argv) > 1 and sys.argv[1] == "factors":
         print(factor_calc())
     else:
-        print("usage: python -m uni_quant.pipelines [daily|factors]")
+        print("usage: python -m open_quant.pipelines [daily|factors]")

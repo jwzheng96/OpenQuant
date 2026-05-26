@@ -13,7 +13,7 @@ from datetime import date
 
 import polars as pl
 
-from uni_quant.data.api import get_data_api
+from open_quant.data.api import get_data_api
 
 START = date(2022, 1, 1)
 END = date(2024, 12, 31)

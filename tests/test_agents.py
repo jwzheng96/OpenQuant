@@ -19,20 +19,20 @@ from pathlib import Path
 
 import pytest
 
-from uni_quant.agents.cache import DecisionCache
-from uni_quant.agents.llm_client import LLMResponse
-from uni_quant.agents.overlay import (
+from open_quant.agents.cache import DecisionCache
+from open_quant.agents.llm_client import LLMResponse
+from open_quant.agents.overlay import (
     OverlayDecision,
     QualitativeOverlay,
     _safe_parse_json,
 )
-from uni_quant.agents.prompts import (
+from open_quant.agents.prompts import (
     fundamentals_user,
     get_prompts,
     news_user,
     technical_user,
 )
-from uni_quant.agents.toolkit import (
+from open_quant.agents.toolkit import (
     FundamentalSnapshot,
     NewsItem,
     TechnicalSnapshot,
@@ -380,12 +380,12 @@ class TestOverlayDecisionLogic:
 
 class TestStrategyToggle:
     def test_overlay_field_default_none(self):
-        from uni_quant.strategies import FactorWeight, MultiFactorStrategy
+        from open_quant.strategies import FactorWeight, MultiFactorStrategy
         s = MultiFactorStrategy(factors=[FactorWeight(name="vol_20d", weight=1.0)])
         assert s.qualitative_overlay is None
 
     def test_overlay_can_be_assigned(self, tmp_path):
-        from uni_quant.strategies import FactorWeight, MultiFactorStrategy
+        from open_quant.strategies import FactorWeight, MultiFactorStrategy
         ov = QualitativeOverlay(
             toolkit=MockToolkit(), llm=MockLLM({}),
             cache=DecisionCache(root=tmp_path, ttl_days=0),

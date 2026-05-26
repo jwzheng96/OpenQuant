@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from textwrap import dedent
 
-from uni_quant.agents.toolkit import (
+from open_quant.agents.toolkit import (
     FundamentalSnapshot,
     NewsItem,
     SentimentSnapshot,

@@ -1,4 +1,4 @@
-# uni-quant — A股工业级量化交易系统
+# open-quant — A股工业级量化交易系统
 
 覆盖 **数据 → 因子 → 回测 → 实盘 → 监控** 的中国A股量化全栈框架。
 面向 50万–500万 个人资金，支持 多因子日频选股 + CTA趋势 + 事件驱动。
@@ -20,13 +20,13 @@ cp configs/data_sources.example.yaml configs/data_sources.yaml
 # 编辑填入 Tushare token
 
 # 4. 初始化数据 (拉历史)
-uni-quant data init --start 2018-01-01
+open-quant data init --start 2018-01-01
 
 # 5. 跑一个示例多因子策略回测
-uni-quant backtest run --config configs/strategies/mf_value_momentum.yaml
+open-quant backtest run --config configs/strategies/mf_value_momentum.yaml
 
 # 6. paper trading
-uni-quant live start --mode paper --strategy mf_value_momentum
+open-quant live start --mode paper --strategy mf_value_momentum
 ```
 
 ## 架构
@@ -37,15 +37,15 @@ uni-quant live start --mode paper --strategy mf_value_momentum
 
 | 模块 | 作用 |
 |---|---|
-| `uni_quant.data` | 数据采集、复权、标的池、A股日历 |
-| `uni_quant.factors` | 因子计算引擎 + 因子库 + IC/IR 评估 |
-| `uni_quant.risk` | Barra 风险模型 + 中性化 + 风控限额 |
-| `uni_quant.portfolio` | 组合优化器 + 调仓 |
-| `uni_quant.strategies` | 多因子 / CTA / 事件驱动 |
-| `uni_quant.backtest` | vectorbt 研究层 + 自研 A股精确事件回测 |
-| `uni_quant.execution` | OMS + QMT/CTP/Paper broker |
-| `uni_quant.monitor` | Prometheus 指标 + 飞书告警 + 日报 |
-| `uni_quant.pipelines` | Prefect 调度的盘前/盘中/盘后任务 |
+| `open_quant.data` | 数据采集、复权、标的池、A股日历 |
+| `open_quant.factors` | 因子计算引擎 + 因子库 + IC/IR 评估 |
+| `open_quant.risk` | Barra 风险模型 + 中性化 + 风控限额 |
+| `open_quant.portfolio` | 组合优化器 + 调仓 |
+| `open_quant.strategies` | 多因子 / CTA / 事件驱动 |
+| `open_quant.backtest` | vectorbt 研究层 + 自研 A股精确事件回测 |
+| `open_quant.execution` | OMS + QMT/CTP/Paper broker |
+| `open_quant.monitor` | Prometheus 指标 + 飞书告警 + 日报 |
+| `open_quant.pipelines` | Prefect 调度的盘前/盘中/盘后任务 |
 
 ## A股特有约束（已实现）
 
@@ -77,17 +77,17 @@ qualitative_overlay:
 
 CLI 工具：
 ```bash
-uni-quant agents config              # 查看 LLM 配置
-uni-quant agents test 600519.SH      # 单股 4-agent 评估（debug 用）
-uni-quant agents eval --from 2025-08-01 --to 2025-09-30  # A/B 量化 vs +LLM
-uni-quant agents cache               # 查看 / 清理决策缓存
+open-quant agents config              # 查看 LLM 配置
+open-quant agents test 600519.SH      # 单股 4-agent 评估（debug 用）
+open-quant agents eval --from 2025-08-01 --to 2025-09-30  # A/B 量化 vs +LLM
+open-quant agents cache               # 查看 / 清理决策缓存
 ```
 
 成本估算（DeepSeek-V4-flash 公开价格）：
 - 单股单日 4 个 agent：~¥0.013
 - 30 股池 × 252 交易日：**~¥98/年**
 
-详见 `src/uni_quant/agents/`。
+详见 `src/open_quant/agents/`。
 
 ## 法律声明
 

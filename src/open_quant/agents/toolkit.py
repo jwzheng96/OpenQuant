@@ -181,7 +181,7 @@ class AkShareToolkit:
 
         # 2) PE/PB/MV from local daily_basic parquet — fast + no throttle
         try:
-            from uni_quant.data.api import get_data_api
+            from open_quant.data.api import get_data_api
             api = get_data_api()
             res = api.query.con.execute(
                 "SELECT pe_ttm, pb, total_mv FROM daily_basic "
@@ -267,7 +267,7 @@ class AkShareToolkit:
     # -- technical (uses our own factor engine + store) ----------------------
 
     def get_technical(self, ts_code: str, *, as_of: date) -> TechnicalSnapshot:
-        from uni_quant.data.api import get_data_api
+        from open_quant.data.api import get_data_api
         api = get_data_api()
         panel = api.get_daily([ts_code], as_of - timedelta(days=120), as_of, adjust="fwd")
         if panel.is_empty():
@@ -301,7 +301,7 @@ class TushareToolkit:
     name = "tushare"
 
     def __init__(self, token: str | None = None):
-        from uni_quant.utils import load_settings
+        from open_quant.utils import load_settings
         if not token:
             token = load_settings().data_sources.tushare.token
         if not token or token == "REPLACE_WITH_YOUR_TOKEN":
@@ -522,7 +522,7 @@ def _to_float(x) -> float | None:
 def _query_factor_snapshot(ts_code: str, as_of: date) -> dict[str, float]:
     """Query last available value of key factors from the store for a symbol."""
     try:
-        from uni_quant.data.api import get_data_api
+        from open_quant.data.api import get_data_api
         api = get_data_api()
         rows = api.query.con.execute(
             "SELECT value FROM read_parquet('data/parquet/factors/name=ml_lgb_strict/data.parquet') "

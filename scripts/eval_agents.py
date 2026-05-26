@@ -34,8 +34,8 @@ import polars as pl
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from paper_daily import run_range  # noqa: E402
-from uni_quant.data.api import get_data_api  # noqa: E402
-from uni_quant.utils import get_logger  # noqa: E402
+from open_quant.data.api import get_data_api  # noqa: E402
+from open_quant.utils import get_logger  # noqa: E402
 
 log = get_logger(__name__)
 

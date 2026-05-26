@@ -22,15 +22,15 @@ deepseek:
 
 storage:
   parquet_root: "./data/parquet"
-  duckdb_path: "./data/uni_quant.duckdb"
+  duckdb_path: "./data/open_quant.duckdb"
   clickhouse:
     host: "localhost"
     port: 8123
-    database: "uni_quant"
-    user: "uni_quant"
-    password: "uni_quant"
+    database: "open_quant"
+    user: "open_quant"
+    password: "open_quant"
   postgres:
-    dsn: "postgresql://uni_quant:uni_quant@localhost:5432/uni_quant"
+    dsn: "postgresql://open_quant:open_quant@localhost:5432/open_quant"
 
 datasets:
   daily:                       # 日线

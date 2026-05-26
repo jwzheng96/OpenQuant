@@ -59,9 +59,9 @@ class FactorEngine:
 
 def default_engine() -> FactorEngine:
     """Engine pre-loaded with library + Alpha101 + Alpha191 (+ ml_lgb if trained)."""
-    from uni_quant.factors.alpha101 import register_alpha101
-    from uni_quant.factors.alpha191 import register_alpha191
-    from uni_quant.factors.library import register_all
+    from open_quant.factors.alpha101 import register_alpha101
+    from open_quant.factors.alpha191 import register_alpha191
+    from open_quant.factors.library import register_all
     eng = FactorEngine()
     register_all(eng)
     register_alpha101(eng)

@@ -28,10 +28,10 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Literal
 
-from uni_quant.agents.cache import DecisionCache
-from uni_quant.agents.llm_client import DeepSeekClient, LLMClient
-from uni_quant.agents.prompts import get_prompts
-from uni_quant.agents.toolkit import (
+from open_quant.agents.cache import DecisionCache
+from open_quant.agents.llm_client import DeepSeekClient, LLMClient
+from open_quant.agents.prompts import get_prompts
+from open_quant.agents.toolkit import (
     AkShareToolkit,
     FundamentalSnapshot,
     HybridToolkit,
@@ -40,7 +40,7 @@ from uni_quant.agents.toolkit import (
     Toolkit,
     TushareToolkit,
 )
-from uni_quant.utils import get_logger
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 
@@ -300,8 +300,8 @@ class QualitativeOverlay:
         Returns (is_risky, short_reason). All checks query local data — no API calls.
         Returns is_risky=True if anything triggers.
         """
-        from uni_quant.backtest.ashare_rules import classify_board, is_st
-        from uni_quant.agents.toolkit import _info_cache_get, _code_part
+        from open_quant.backtest.ashare_rules import classify_board, is_st
+        from open_quant.agents.toolkit import _info_cache_get, _code_part
 
         # 1. Board classification (cheapest, no I/O)
         board = classify_board(symbol)
@@ -322,7 +322,7 @@ class QualitativeOverlay:
         else:
             # Fallback: try local daily_basic store
             try:
-                from uni_quant.data.api import get_data_api
+                from open_quant.data.api import get_data_api
                 api = get_data_api()
                 res = api.query.con.execute(
                     "SELECT total_mv FROM daily_basic "
@@ -340,7 +340,7 @@ class QualitativeOverlay:
 
         # 4. Recent 20-day abs return (from local daily store)
         try:
-            from uni_quant.data.api import get_data_api
+            from open_quant.data.api import get_data_api
             api = get_data_api()
             from datetime import timedelta
             panel = api.get_daily([symbol], as_of - timedelta(days=40), as_of, adjust="fwd",
@@ -355,7 +355,7 @@ class QualitativeOverlay:
 
         # 5. Extreme valuation from local daily_basic
         try:
-            from uni_quant.data.api import get_data_api
+            from open_quant.data.api import get_data_api
             api = get_data_api()
             res = api.query.con.execute(
                 "SELECT pe_ttm, pb FROM daily_basic "

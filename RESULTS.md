@@ -1,4 +1,4 @@
-# uni-quant — 午睡期间完成的工作总结
+# open-quant — 午睡期间完成的工作总结
 
 > 时间窗口：2026-05-25 13:00 – 15:00
 
@@ -204,7 +204,7 @@ A 股本土特化因子，覆盖：
 
 - **真券商接口**：QMTBroker / CTPBroker 是 stub 状态，需要你拿到券商账号后接 xtquant 的 5-10 行 `order_stock`
 - **Postgres 持久化**：现在订单只在内存里，需要 wire 到 `infra/postgres/init.sql` 的 orders 表
-- **Prefect 调度**：`uni_quant/pipelines.py` 已有 flow 定义但未部署到 server
+- **Prefect 调度**：`open_quant/pipelines.py` 已有 flow 定义但未部署到 server
 - **盘中风控环**：30 秒 polling broker + 风控检查（OMS.reconcile 已实现，只需循环调用）
 
 ## 13. 完整对比汇总（按时间顺序）
@@ -237,13 +237,13 @@ A 股本土特化因子，覆盖：
 新增/修改的关键文件：
 
 ```
-src/uni_quant/data/api.py             - get_daily 加 include_basic
-src/uni_quant/data/sources.py         - AkShareSource 加 sina 备用
-src/uni_quant/data/store.py           - 列类型规范化
-src/uni_quant/factors/alpha101.py     - 57 个 Alpha101 (新)
-src/uni_quant/factors/alpha191.py     - 55 个 gtja Alpha191 (新)
-src/uni_quant/factors/eval.py         - quantile_returns 鲁棒化
-src/uni_quant/strategies.py           - winsorize + finite filter
+src/open_quant/data/api.py             - get_daily 加 include_basic
+src/open_quant/data/sources.py         - AkShareSource 加 sina 备用
+src/open_quant/data/store.py           - 列类型规范化
+src/open_quant/factors/alpha101.py     - 57 个 Alpha101 (新)
+src/open_quant/factors/alpha191.py     - 55 个 gtja Alpha191 (新)
+src/open_quant/factors/eval.py         - quantile_returns 鲁棒化
+src/open_quant/strategies.py           - winsorize + finite filter
 
 scripts/sync_real_data.py             - 10 蓝筹同步 (legacy)
 scripts/sync_hs300_top50.py           - HS300 50 同步

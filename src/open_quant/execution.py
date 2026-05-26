@@ -24,7 +24,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Protocol
 
-from uni_quant.utils import get_logger
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 

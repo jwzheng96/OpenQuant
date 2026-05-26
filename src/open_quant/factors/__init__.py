@@ -1,13 +1,13 @@
 """Factor engine + library + evaluation in a single tight package."""
 
-from uni_quant.factors.engine import FactorEngine, FactorResult, default_engine
-from uni_quant.factors.eval import (
+from open_quant.factors.engine import FactorEngine, FactorResult, default_engine
+from open_quant.factors.eval import (
     FactorEvalResult,
     evaluate_factor,
     ic_series,
     quantile_returns,
 )
-from uni_quant.factors.library import (
+from open_quant.factors.library import (
     bp_factor,
     momentum_factor,
     reversal_factor,

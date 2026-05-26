@@ -1,4 +1,4 @@
-"""uni_quant CLI — `uni_quant data sync`, `uni_quant backtest run`, etc.
+"""open_quant CLI — `open_quant data sync`, `open_quant backtest run`, etc.
 
 Built on typer. Keep commands thin — heavy work happens in the domain modules.
 """
@@ -13,10 +13,10 @@ import yaml
 from rich import print
 from rich.table import Table
 
-from uni_quant.data import get_data_api
-from uni_quant.utils import get_logger, load_settings
+from open_quant.data import get_data_api
+from open_quant.utils import get_logger, load_settings
 
-app = typer.Typer(no_args_is_help=True, add_completion=False, help="uni_quant — A-share quant CLI")
+app = typer.Typer(no_args_is_help=True, add_completion=False, help="open_quant — A-share quant CLI")
 data_app = typer.Typer(no_args_is_help=True)
 backtest_app = typer.Typer(no_args_is_help=True)
 factor_app = typer.Typer(no_args_is_help=True)
@@ -103,7 +103,7 @@ def data_check(
 
 @factor_app.command("list")
 def factor_list() -> None:
-    from uni_quant.factors import default_engine
+    from open_quant.factors import default_engine
     eng = default_engine()
     for name in eng.names():
         print(f"  - {name}")
@@ -115,7 +115,7 @@ def factor_eval(
     start: str = typer.Option("2020-01-01"),
     end: str = typer.Option(date.today().isoformat()),
 ) -> None:
-    from uni_quant.factors import default_engine, evaluate_factor
+    from open_quant.factors import default_engine, evaluate_factor
     api = get_data_api()
     panel = api.get_daily(None, _parse_date(start), _parse_date(end), adjust="fwd")
     if panel.is_empty():
@@ -142,9 +142,9 @@ def factor_eval(
 @backtest_app.command("run")
 def backtest_run(config: Path = typer.Option(..., exists=True, dir_okay=False)) -> None:
     cfg = yaml.safe_load(config.read_text())
-    from uni_quant.backtest import BacktestConfig, EventBacktester
-    from uni_quant.data.universe import annotate_for_backtest
-    from uni_quant.strategies import FactorWeight, MultiFactorStrategy
+    from open_quant.backtest import BacktestConfig, EventBacktester
+    from open_quant.data.universe import annotate_for_backtest
+    from open_quant.strategies import FactorWeight, MultiFactorStrategy
 
     api = get_data_api()
     bcfg = cfg.get("backtest", {})
@@ -163,7 +163,7 @@ def backtest_run(config: Path = typer.Option(..., exists=True, dir_okay=False)) 
         overlay = None
         overlay_cfg = cfg.get("qualitative_overlay") or {}
         if overlay_cfg.get("enabled"):
-            from uni_quant.agents import QualitativeOverlay
+            from open_quant.agents import QualitativeOverlay
             overlay = QualitativeOverlay.from_config(overlay_cfg)
             print(f"[overlay enabled — agents: "
                   f"{[k for k, v in overlay_cfg.get('agents', {}).items() if v]}]")
@@ -242,10 +242,10 @@ def agents_test(
 ) -> None:
     """Run a single-stock end-to-end overlay evaluation. Useful for debugging."""
     import json as _json
-    from uni_quant.agents import DeepSeekClient, HybridToolkit
-    from uni_quant.agents.cache import DecisionCache
-    from uni_quant.agents.overlay import _safe_parse_json
-    from uni_quant.agents.prompts import get_prompts
+    from open_quant.agents import DeepSeekClient, HybridToolkit
+    from open_quant.agents.cache import DecisionCache
+    from open_quant.agents.overlay import _safe_parse_json
+    from open_quant.agents.prompts import get_prompts
 
     target_date = _parse_date(as_of)
     tk = HybridToolkit()

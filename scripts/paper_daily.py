@@ -29,20 +29,20 @@ from pathlib import Path
 import polars as pl
 import yaml
 
-from uni_quant.backtest.ashare_rules import (
+from open_quant.backtest.ashare_rules import (
     BoardType,
     PriceLimitConfig,
     classify_board,
     is_tradable_at_open,
     round_to_lot,
 )
-from uni_quant.backtest.cost_model import CostConfig, CostModel
-from uni_quant.data.api import get_data_api
-from uni_quant.data.universe import annotate_for_backtest
-from uni_quant.monitor import daily_report
-from uni_quant.paper_state import PaperFill, PaperOrder, PaperPosition, PaperState
-from uni_quant.strategies import FactorWeight, MultiFactorStrategy
-from uni_quant.utils import get_logger
+from open_quant.backtest.cost_model import CostConfig, CostModel
+from open_quant.data.api import get_data_api
+from open_quant.data.universe import annotate_for_backtest
+from open_quant.monitor import daily_report
+from open_quant.paper_state import PaperFill, PaperOrder, PaperPosition, PaperState
+from open_quant.strategies import FactorWeight, MultiFactorStrategy
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 
@@ -60,7 +60,7 @@ def load_strategy(config_path: Path) -> tuple[MultiFactorStrategy, dict]:
     overlay_log = []
     overlay_cfg = cfg.get("qualitative_overlay") or {}
     if overlay_cfg.get("enabled"):
-        from uni_quant.agents import QualitativeOverlay
+        from open_quant.agents import QualitativeOverlay
         log.info("qualitative_overlay enabled — building agent layer")
         overlay = QualitativeOverlay.from_config(overlay_cfg)
 

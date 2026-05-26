@@ -23,9 +23,9 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from uni_quant.data.api import get_data_api
-from uni_quant.factors import default_engine
-from uni_quant.factors.eval import ic_series
+from open_quant.data.api import get_data_api
+from open_quant.factors import default_engine
+from open_quant.factors.eval import ic_series
 
 TRAIN_START = date(2022, 6, 1)
 TRAIN_END = date(2023, 12, 31)
@@ -128,7 +128,7 @@ def main():
     print(f"  test:  {TEST_START}..{TEST_END}", flush=True)
 
     # Annotate
-    from uni_quant.data.universe import annotate_for_backtest
+    from open_quant.data.universe import annotate_for_backtest
     sb = api.query.con.execute("SELECT * FROM stock_basic").pl()
     panel = annotate_for_backtest(panel, sb)
 

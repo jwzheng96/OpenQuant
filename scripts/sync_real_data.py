@@ -12,8 +12,8 @@ from datetime import date
 
 import polars as pl
 
-from uni_quant.data.api import get_data_api
-from uni_quant.data.sources import AkShareSource
+from open_quant.data.api import get_data_api
+from open_quant.data.sources import AkShareSource
 
 # 10 大蓝筹 (减半，避免后端节流)
 BLUE_CHIPS = [

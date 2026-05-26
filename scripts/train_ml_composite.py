@@ -24,9 +24,9 @@ import numpy as np
 import polars as pl
 from dateutil.relativedelta import relativedelta
 
-from uni_quant.data.api import get_data_api
-from uni_quant.data.universe import annotate_for_backtest
-from uni_quant.factors import default_engine
+from open_quant.data.api import get_data_api
+from open_quant.data.universe import annotate_for_backtest
+from open_quant.factors import default_engine
 
 TRAIN_LOOKBACK_MONTHS = 12
 TARGET_HORIZON_DAYS = 5

@@ -1,6 +1,6 @@
--- uni_quant metadata schema
-CREATE SCHEMA IF NOT EXISTS uni_quant;
-SET search_path TO uni_quant, public;
+-- open_quant metadata schema
+CREATE SCHEMA IF NOT EXISTS open_quant;
+SET search_path TO open_quant, public;
 
 CREATE TABLE IF NOT EXISTS data_sync_state (
     dataset      TEXT PRIMARY KEY,

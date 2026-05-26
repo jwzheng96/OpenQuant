@@ -1,4 +1,4 @@
-"""End-to-end + unit tests for uni_quant.
+"""End-to-end + unit tests for open_quant.
 
 Covers the must-be-correct modules:
   * A-share rules (price limits, board classification, T+1 lock, tradability)
@@ -18,7 +18,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from uni_quant.backtest import (
+from open_quant.backtest import (
     BacktestConfig,
     BoardType,
     CostConfig,
@@ -31,17 +31,17 @@ from uni_quant.backtest import (
     price_limit_bounds,
     round_to_lot,
 )
-from uni_quant.backtest.ashare_rules import (
+from open_quant.backtest.ashare_rules import (
     is_limit_down,
     is_limit_up,
     is_tradable_at_open,
     vectorized_tradable_mask,
 )
-from uni_quant.data.adjust import adjust_ohlcv
-from uni_quant.data.calendar import AShareCalendar, get_calendar
-from uni_quant.data.sources import MockSource
-from uni_quant.factors import default_engine, evaluate_factor
-from uni_quant.factors.library import momentum_factor
+from open_quant.data.adjust import adjust_ohlcv
+from open_quant.data.calendar import AShareCalendar, get_calendar
+from open_quant.data.sources import MockSource
+from open_quant.factors import default_engine, evaluate_factor
+from open_quant.factors.library import momentum_factor
 
 
 # ---------------------------------------------------------------------------- #

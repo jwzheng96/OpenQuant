@@ -9,8 +9,8 @@ from datetime import date
 
 import polars as pl
 
-from uni_quant.data.api import get_data_api
-from uni_quant.data.sources import AkShareSource
+from open_quant.data.api import get_data_api
+from open_quant.data.sources import AkShareSource
 
 START = date(2022, 1, 1)
 END = date(2024, 12, 31)

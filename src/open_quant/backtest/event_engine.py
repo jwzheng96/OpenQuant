@@ -22,15 +22,15 @@ from typing import Callable, Protocol
 import numpy as np
 import polars as pl
 
-from uni_quant.backtest.ashare_rules import (
+from open_quant.backtest.ashare_rules import (
     BoardType,
     PriceLimitConfig,
     classify_board,
     is_tradable_at_open,
     round_to_lot,
 )
-from uni_quant.backtest.cost_model import CostConfig, CostModel
-from uni_quant.utils import get_logger
+from open_quant.backtest.cost_model import CostConfig, CostModel
+from open_quant.utils import get_logger
 
 log = get_logger(__name__)
 

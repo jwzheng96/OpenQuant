@@ -3,7 +3,7 @@ import sys
 import polars as pl
 from datetime import date
 
-from uni_quant.data.sources import AkShareSource
+from open_quant.data.sources import AkShareSource
 
 ak = AkShareSource()
 sys.stdout.write("=== stock_basic ===\n"); sys.stdout.flush()

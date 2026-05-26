@@ -1,7 +1,7 @@
 """Strategy implementations — all three flavors in one file.
 
 Each strategy implements `on_date(d, panel, positions, cash) -> dict[symbol, weight]`
-matching `uni_quant.backtest.event_engine.TargetWeightStrategy`.
+matching `open_quant.backtest.event_engine.TargetWeightStrategy`.
 
   - `MultiFactorStrategy`: daily/weekly equal-weighted top-N from blended factors.
   - `DualThrustCTA`: classic intraday breakout (here applied to daily bars for
@@ -17,8 +17,8 @@ from datetime import date
 
 import polars as pl
 
-from uni_quant.factors import default_engine
-from uni_quant.portfolio import OptimizerConstraints, optimize_target_weights
+from open_quant.factors import default_engine
+from open_quant.portfolio import OptimizerConstraints, optimize_target_weights
 
 
 # ---------------------------------------------------------------------------- #
@@ -108,7 +108,7 @@ class MultiFactorStrategy:
         # Optional: prepare style exposures snapshot for neutralization
         exposures_today = None
         if self.neutralize_styles:
-            from uni_quant.portfolio import style_exposures
+            from open_quant.portfolio import style_exposures
             exps = style_exposures(snapshot)
             exposures_today = exps.filter(pl.col("trade_date") == d).drop("trade_date")
             if exposures_today.is_empty():

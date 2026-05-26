@@ -1,11 +1,11 @@
 [project]
-name = "uni-quant"
+name = "open-quant"
 version = "0.1.0"
 description = "A-share industrial-grade quantitative trading system"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
-authors = [{ name = "uni-quant" }]
+authors = [{ name = "open-quant" }]
 
 dependencies = [
     # core
@@ -68,14 +68,14 @@ dev = [
 ]
 
 [project.scripts]
-uni-quant = "uni_quant.cli:app"
+open-quant = "open_quant.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/uni_quant"]
+packages = ["src/open_quant"]
 
 [tool.ruff]
 line-length = 110

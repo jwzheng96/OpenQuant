@@ -34,7 +34,7 @@ class DeepSeekConfig(BaseModel):
 
 class StorageConfig(BaseModel):
     parquet_root: str = "./data/parquet"
-    duckdb_path: str = "./data/uni_quant.duckdb"
+    duckdb_path: str = "./data/open_quant.duckdb"
     clickhouse: dict[str, Any] = Field(default_factory=dict)
     postgres: dict[str, Any] = Field(default_factory=dict)
 
