@@ -43,6 +43,13 @@ class MultiFactorStrategy:
     # Barra-light neutralization: regress each factor on (log_mv, vol_60d, mom_120d, bp)
     # cross-sectionally per date, use residuals. Strips style beta from alpha.
     neutralize_styles: bool = False
+    # Optional qualitative overlay (agent-based KEEP/DROP). When set, the
+    # top-N quant picks are filtered through LLM analysts before final
+    # portfolio construction. Set to None to keep pure-quant behavior.
+    qualitative_overlay: object | None = None
+    # Hook fired after each overlay evaluation with the per-symbol decisions.
+    # Useful for logging / inspection / paper trading state attribution.
+    on_overlay_decisions: callable | None = None
 
     def __post_init__(self):
         self._engine = default_engine()
@@ -148,6 +155,32 @@ class MultiFactorStrategy:
 
         ranked = sorted(contribs.items(), key=lambda kv: -kv[1])[: self.top_n]
         alpha = {sym: c for sym, c in ranked}
+
+        # ---- Qualitative overlay (optional, agent-based filter) ----
+        if self.qualitative_overlay is not None and alpha:
+            try:
+                decisions = self.qualitative_overlay.evaluate(list(alpha.keys()), as_of=d)
+                if self.on_overlay_decisions is not None:
+                    self.on_overlay_decisions(d, decisions)
+                # Apply decisions: DROP filters out, KEEP optionally scales
+                filtered: dict[str, float] = {}
+                for sym, contrib in alpha.items():
+                    dec = decisions.get(sym)
+                    if dec is None or dec.action == "KEEP":
+                        mult = getattr(dec, "weight_multiplier", 1.0) if dec else 1.0
+                        filtered[sym] = contrib * mult
+                # If everything was dropped, fall back to unfiltered (fail-safe)
+                if filtered:
+                    alpha = filtered
+                else:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"overlay dropped ALL {len(alpha)} symbols on {d}; falling back to unfiltered"
+                    )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception(f"overlay failed: {e}; using raw quant alpha")
+
         weights = optimize_target_weights(
             alpha,
             current={s: 0.0 for s in alpha},

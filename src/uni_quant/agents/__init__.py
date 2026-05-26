@@ -9,6 +9,11 @@ is absent or `enabled: false`, strategy behavior is unchanged (zero overhead).
 """
 
 from uni_quant.agents.llm_client import DeepSeekClient, LLMClient
+from uni_quant.agents.overlay import (
+    OverlayDecision,
+    OverlayStats,
+    QualitativeOverlay,
+)
 from uni_quant.agents.toolkit import (
     AkShareToolkit,
     HybridToolkit,
@@ -25,4 +30,7 @@ __all__ = [
     "TushareToolkit",
     "HybridToolkit",
     "NewsItem",
+    "QualitativeOverlay",
+    "OverlayDecision",
+    "OverlayStats",
 ]

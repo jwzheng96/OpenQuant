@@ -158,6 +158,13 @@ def backtest_run(config: Path = typer.Option(..., exists=True, dir_okay=False)) 
     strategy_kind = cfg.get("type", "multi_factor")
     if strategy_kind == "multi_factor":
         factors = [FactorWeight(**f) for f in cfg.get("factors", [])]
+        overlay = None
+        overlay_cfg = cfg.get("qualitative_overlay") or {}
+        if overlay_cfg.get("enabled"):
+            from uni_quant.agents import QualitativeOverlay
+            overlay = QualitativeOverlay.from_config(overlay_cfg)
+            print(f"[overlay enabled — agents: "
+                  f"{[k for k, v in overlay_cfg.get('agents', {}).items() if v]}]")
         strat = MultiFactorStrategy(
             factors=factors,
             top_n=cfg.get("selection", {}).get("top_n", 30),
@@ -166,6 +173,7 @@ def backtest_run(config: Path = typer.Option(..., exists=True, dir_okay=False)) 
             ),
             max_weight=cfg.get("risk_overrides", {}).get("max_position_weight", 0.05),
             neutralize_styles=cfg.get("neutralize", {}).get("enabled", False),
+            qualitative_overlay=overlay,
         )
     else:
         raise typer.BadParameter(f"unsupported strategy type in CLI: {strategy_kind}")
