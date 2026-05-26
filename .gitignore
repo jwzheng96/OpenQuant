@@ -5,8 +5,9 @@ __pycache__/
 .env
 .env.local
 
-# data
-data/
+# data (anchored to repo root — `data/` without `/` would match
+# src/open_quant/data/ too and break the package)
+/data/
 *.parquet
 *.duckdb
 *.duckdb.wal
@@ -37,15 +38,15 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# data + state
-data/parquet/
-data/open_quant.duckdb
-data/open_quant.duckdb.wal
-data/paper/
-data/paper_state/
-data/strict_holdout_report.json
-data/bear_2022_report.json
-data/factor_whitelist.json
+# data + state — all anchored to repo root
+/data/parquet/
+/data/open_quant.duckdb
+/data/open_quant.duckdb.wal
+/data/paper/
+/data/paper_state/
+/data/strict_holdout_report.json
+/data/bear_2022_report.json
+/data/factor_whitelist.json
 
 # secrets — already in .gitignore but double-check
 configs/data_sources.yaml
