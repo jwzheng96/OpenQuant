@@ -10,6 +10,16 @@ akshare:
   rate_limit_per_minute: 200
   # akshare 没有 token，仅用于 wencai/em 等
 
+# LLM provider for agent-based qualitative overlay
+# Get your key at https://platform.deepseek.com/
+deepseek:
+  api_key: "REPLACE_WITH_YOUR_DEEPSEEK_KEY"
+  model: "deepseek-chat"      # deepseek-chat | deepseek-reasoner | deepseek-v4-flash
+  base_url: "https://api.deepseek.com/v1"
+  temperature: 0.3
+  max_tokens: 1200
+  timeout: 60.0
+
 storage:
   parquet_root: "./data/parquet"
   duckdb_path: "./data/uni_quant.duckdb"
