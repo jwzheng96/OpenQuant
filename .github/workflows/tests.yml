@@ -51,11 +51,26 @@ jobs:
             "pydantic>=2.7" "pydantic-settings>=2.3" "pyyaml>=6.0" \
             "loguru>=0.7" "tenacity>=8.3" "typer>=0.12" "rich>=13.7" \
             "httpx>=0.27" "prometheus-client>=0.20" "jinja2>=3.1" \
-            "pytest>=8.2" "hypothesis>=6.100"
+            "pytest>=8.2" "pytest-cov>=5.0" "hypothesis>=6.100"
           uv pip install --system --no-deps -e .
 
-      - name: Run pytest
-        run: pytest -v --tb=short
+      - name: Run pytest with coverage
+        run: |
+          pytest -v --tb=short \
+            --cov=src/open_quant \
+            --cov-report=xml \
+            --cov-report=term-missing:skip-covered
+
+      - name: Upload coverage to Codecov
+        # Public repos don't need a token; for private use CODECOV_TOKEN secret
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.11'   # only upload once per CI run
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-openquant
+          fail_ci_if_error: false             # don't break CI if codecov upload fails
+          verbose: true
 
       - name: Compile-check all scripts
         # Catches obvious syntax errors in helper scripts that aren't covered

@@ -1,7 +1,13 @@
-# open-quant — A股工业级量化交易系统
+# OpenQuant — A股工业级量化交易系统
+
+[![tests](https://github.com/jwzheng96/OpenQuant/actions/workflows/tests.yml/badge.svg)](https://github.com/jwzheng96/OpenQuant/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/jwzheng96/OpenQuant/branch/main/graph/badge.svg)](https://codecov.io/gh/jwzheng96/OpenQuant)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
 覆盖 **数据 → 因子 → 回测 → 实盘 → 监控** 的中国A股量化全栈框架。
 面向 50万–500万 个人资金，支持 多因子日频选股 + CTA趋势 + 事件驱动。
+内置可选的 LLM agent overlay（TradingAgents-style）作为量化选股后的"质量门"。
 
 > ⚠️ **本系统不承诺盈利**。它提供的是稳健的工程基础设施和正确的 A股微观摩擦建模，alpha 仍需自行研究。
 
