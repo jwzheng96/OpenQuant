@@ -1,0 +1,14 @@
+OpenQuant
+Copyright 2026 jwzheng96
+
+This product includes software developed by the OpenQuant contributors.
+
+This product imports concepts and formulas from third-party publicly-available
+research:
+  - WorldQuant "101 Formulaic Alphas" (Z. Kakushadze, arXiv:1601.00991)
+  - 国泰君安证券《短周期价量特征 Alpha 因子》报告 (Alpha191)
+  - Barra "China Equity Model" 风格因子框架
+  - TradingAgents architecture inspiration (Tauric Research, arXiv:2412.20138)
+
+All formula implementations are independent ports based on the published
+formulas; the source code is original work covered by this project's license.
