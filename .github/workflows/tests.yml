@@ -45,29 +45,28 @@ jobs:
       - name: Install test dependencies
         # Minimal set required by tests/ — avoids heavy deps (cvxpy, vectorbt,
         # prefect, lightgbm) that aren't exercised by the unit tests.
-        #
-        # hatchling + editables are needed at build time for PEP 660 editable
-        # installs (`editables` is hatchling's optional sub-dep, not pulled
-        # in by `pip install hatchling`).  We use --no-build-isolation so the
-        # editable build uses these pre-installed copies.
+        # NOTE: we deliberately skip editable install — pytest gets src/ from
+        # tool.pytest.ini_options.pythonpath in pyproject.toml.  Avoiding the
+        # editable build sidesteps recurring uv/hatchling/editables friction
+        # on GitHub Actions runners.
         run: |
-          uv pip install --system "hatchling>=1.20" "editables>=0.5"
           uv pip install --system \
             "numpy>=1.26" "polars>=1.0" "pandas>=2.2" "pyarrow>=15.0" "duckdb>=1.0" \
             "pydantic>=2.7" "pydantic-settings>=2.3" "pyyaml>=6.0" \
             "loguru>=0.7" "tenacity>=8.3" "typer>=0.12" "rich>=13.7" \
             "httpx>=0.27" "prometheus-client>=0.20" "jinja2>=3.1" \
             "pytest>=8.2" "pytest-cov>=5.0" "hypothesis>=6.100"
-          uv pip install --system --no-deps --no-build-isolation -e .
 
       - name: Verify package layout
-        # Catches the case where editable install dropped subpackages
+        env:
+          PYTHONPATH: src
         run: |
           python -c "from open_quant.data import adjust, calendar, api; print('subpackages ok')"
           python -c "from open_quant.agents import overlay, toolkit; print('agents ok')"
           python -c "from open_quant.factors import default_engine; print(f'{len(default_engine().names())} factors')"
 
       - name: Run pytest with coverage
+        # pytest gets src/ via tool.pytest.ini_options.pythonpath in pyproject.toml
         run: |
           pytest -v --tb=short \
             --cov=src/open_quant \

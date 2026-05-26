@@ -88,6 +88,7 @@ ignore = ["E501", "B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]              # so `import open_quant` works without install
 addopts = "-ra -q --strict-markers"
 asyncio_mode = "auto"
 
