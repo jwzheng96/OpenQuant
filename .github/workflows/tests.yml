@@ -1,0 +1,81 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache uv downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-${{ runner.os }}-py${{ matrix.python-version }}-
+            uv-${{ runner.os }}-
+
+      - name: Install test dependencies
+        # Minimal set required by tests/ — avoids heavy deps (cvxpy, vectorbt,
+        # prefect, lightgbm) that aren't exercised by the unit tests.
+        run: |
+          uv pip install --system \
+            "numpy>=1.26" "polars>=1.0" "pandas>=2.2" "pyarrow>=15.0" "duckdb>=1.0" \
+            "pydantic>=2.7" "pydantic-settings>=2.3" "pyyaml>=6.0" \
+            "loguru>=0.7" "tenacity>=8.3" "typer>=0.12" "rich>=13.7" \
+            "httpx>=0.27" "prometheus-client>=0.20" "jinja2>=3.1" \
+            "pytest>=8.2" "hypothesis>=6.100"
+          uv pip install --system --no-deps -e .
+
+      - name: Run pytest
+        run: pytest -v --tb=short
+
+      - name: Compile-check all scripts
+        # Catches obvious syntax errors in helper scripts that aren't covered
+        # by pytest (e.g. sync_*.py, train_*.py).
+        run: |
+          python -m compileall -q src tests scripts
+
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - name: Lint
+        # Treat lint as informational for now — fail only on syntax errors (E9)
+        # and undefined-name (F82x).
+        run: |
+          ruff check src tests scripts \
+            --select E9,F82,F63 \
+            --output-format=github
