@@ -162,38 +162,45 @@ class QualitativeOverlay:
         name = self.name_lookup.get(symbol, symbol)
         analyst_outputs: dict[str, dict] = {}
 
-        # ---- Fundamentals ----
-        if self.agents_enabled.get("fundamentals"):
-            try:
-                snap = self.toolkit.get_fundamentals(symbol, as_of=as_of)
-                analyst_outputs["fundamentals"] = self._call_analyst(
-                    "fundamentals", symbol, as_of_str,
-                    lambda fn: fn(snap),
-                )
-            except Exception as e:
-                log.warning(f"{symbol} fundamentals: {e}")
+        # ---- Parallel data fetch (3 toolkit calls concurrently, ~3x speedup) ----
+        data: dict[str, object] = {}
+        with ThreadPoolExecutor(max_workers=3) as fetch_pool:
+            futures = {}
+            if self.agents_enabled.get("fundamentals"):
+                futures[fetch_pool.submit(self.toolkit.get_fundamentals, symbol, as_of=as_of)] = "fundamentals"
+            if self.agents_enabled.get("news"):
+                futures[fetch_pool.submit(self.toolkit.get_news, symbol, days=7, limit=8)] = "news"
+            if self.agents_enabled.get("technical"):
+                futures[fetch_pool.submit(self.toolkit.get_technical, symbol, as_of=as_of)] = "technical"
+            for fut in as_completed(futures):
+                kind = futures[fut]
+                try:
+                    data[kind] = fut.result()
+                except Exception as e:
+                    log.warning(f"{symbol} {kind} fetch: {e}")
 
-        # ---- News ----
-        if self.agents_enabled.get("news"):
-            try:
-                news_items = self.toolkit.get_news(symbol, days=7, limit=8)
-                analyst_outputs["news"] = self._call_analyst(
-                    "news", symbol, as_of_str,
-                    lambda fn: fn(symbol, name, news_items),
-                )
-            except Exception as e:
-                log.warning(f"{symbol} news: {e}")
+        # Use the fundamentals snapshot to backfill `name` if we didn't have it
+        if name == symbol and "fundamentals" in data:
+            f = data["fundamentals"]
+            if getattr(f, "name", None):
+                name = f.name
 
-        # ---- Technical ----
-        if self.agents_enabled.get("technical"):
-            try:
-                tech = self.toolkit.get_technical(symbol, as_of=as_of)
-                analyst_outputs["technical"] = self._call_analyst(
-                    "technical", symbol, as_of_str,
-                    lambda fn: fn(tech, name),
-                )
-            except Exception as e:
-                log.warning(f"{symbol} technical: {e}")
+        # ---- Run analysts (sequential to avoid LLM rate-limit) ----
+        if "fundamentals" in data:
+            analyst_outputs["fundamentals"] = self._call_analyst(
+                "fundamentals", symbol, as_of_str,
+                lambda fn, d=data["fundamentals"]: fn(d),
+            )
+        if "news" in data:
+            analyst_outputs["news"] = self._call_analyst(
+                "news", symbol, as_of_str,
+                lambda fn, items=data["news"]: fn(symbol, name, items),
+            )
+        if "technical" in data:
+            analyst_outputs["technical"] = self._call_analyst(
+                "technical", symbol, as_of_str,
+                lambda fn, t=data["technical"]: fn(t, name),
+            )
 
         # ---- Aggregator ----
         if not analyst_outputs:

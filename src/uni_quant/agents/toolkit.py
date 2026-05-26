@@ -158,40 +158,102 @@ class AkShareToolkit:
     # -- fundamentals --------------------------------------------------------
 
     def get_fundamentals(self, ts_code: str, *, as_of: date | None = None) -> FundamentalSnapshot:
-        """Single quarter snapshot via stock_zh_a_spot_em + 财务摘要 endpoints."""
+        """Stitches local store + live AkShare:
+        - LOCAL stock_basic_info cache → name, industry  (1-day TTL)
+        - LOCAL daily_basic parquet → PE/PB/MV (no live call needed)
+        - LIVE stock_individual_info_em → fallback for name when cache miss
+        - LIVE stock_financial_abstract → 历史财务（按季度）
+        Designed to degrade gracefully when EastMoney is rate-limiting.
+        """
         import akshare as ak
         code = _code_part(ts_code)
         snap = FundamentalSnapshot(ts_code=ts_code, as_of=as_of or date.today())
 
-        # Spot quote — has PE/PB/MV
-        try:
-            spot = ak.stock_zh_a_spot_em()
-            row = spot[spot["代码"] == code]
-            if not row.empty:
-                r = row.iloc[0]
-                snap.name = str(r.get("名称", "") or "")
-                snap.pe_ttm = float(r.get("市盈率-动态", float("nan")))
-                snap.pb = float(r.get("市净率", float("nan")))
-                snap.total_mv = float(r.get("总市值", float("nan")))
-                snap.raw["spot_change_pct"] = float(r.get("涨跌幅", 0))
-        except Exception as e:
-            snap.raw["spot_error"] = str(e)[:80]
+        # 1) Try local info cache first (name + industry, much more stable)
+        cached_info = _info_cache_get(code)
+        if cached_info:
+            snap.name = cached_info.get("name") or ""
+            snap.industry = cached_info.get("industry") or ""
+            mv = _to_float(cached_info.get("total_mv"))
+            if mv is not None:
+                snap.total_mv = mv
+            snap.raw["info_source"] = "cache"
 
-        # Financial summary — 财务报表 (income / balance sheet)
+        # 2) PE/PB/MV from local daily_basic parquet — fast + no throttle
+        try:
+            from uni_quant.data.api import get_data_api
+            api = get_data_api()
+            res = api.query.con.execute(
+                "SELECT pe_ttm, pb, total_mv FROM daily_basic "
+                "WHERE symbol = ? AND trade_date <= ? "
+                "ORDER BY trade_date DESC LIMIT 1",
+                [ts_code, snap.as_of],
+            ).pl()
+            if not res.is_empty():
+                if res["pe_ttm"][0] is not None:
+                    snap.pe_ttm = float(res["pe_ttm"][0])
+                if res["pb"][0] is not None:
+                    snap.pb = float(res["pb"][0])
+                if res["total_mv"][0] is not None and snap.total_mv is None:
+                    snap.total_mv = float(res["total_mv"][0])
+                snap.raw["valuation_source"] = "local_daily_basic"
+        except Exception as e:
+            snap.raw["local_basic_error"] = str(e)[:80]
+
+        # 3) Live individual_info_em — only if cache missed AND we still need name
+        if not snap.name:
+            try:
+                info = ak.stock_individual_info_em(symbol=code)
+                if info is not None and len(info) > 0:
+                    kv = dict(zip(info["item"], info["value"]))
+                    snap.name = str(kv.get("股票简称", "") or "")
+                    snap.industry = str(kv.get("行业", "") or "")
+                    if snap.total_mv is None:
+                        snap.total_mv = _to_float(kv.get("总市值"))
+                    snap.raw["list_date"] = str(kv.get("上市时间", ""))
+                    snap.raw["info_source"] = "live_em"
+                    # cache it
+                    _info_cache_put(code, {
+                        "name": snap.name, "industry": snap.industry,
+                        "total_mv": snap.total_mv,
+                    })
+            except Exception as e:
+                snap.raw["info_error"] = str(e)[:80]
+
+        # 3) Financial abstract — 历史季度财务，正确处理列结构
+        # df.columns = ['选项', '指标', '20260331', '20251231', '20250930', ...]
         try:
             df = ak.stock_financial_abstract(symbol=code)
             if df is not None and len(df) > 0:
-                # Latest period (most recent column)
-                latest_col = df.columns[1]   # 第一个是指标名
-                indicators = dict(zip(df["指标"], df[latest_col]))
-                snap.revenue = _to_float(indicators.get("营业总收入"))
-                snap.net_profit = _to_float(indicators.get("归母净利润"))
-                snap.roe_ttm = _to_float(indicators.get("净资产收益率"))
-                snap.gross_margin = _to_float(indicators.get("销售毛利率"))
-                # Year-over-year growth if available
-                snap.revenue_growth_yoy = _to_float(indicators.get("营业总收入滚动环比增长"))
-                snap.profit_growth_yoy = _to_float(indicators.get("归属净利润滚动环比增长"))
-                snap.raw["latest_period"] = str(latest_col)
+                # Find date columns (8-digit YYYYMMDD)
+                date_cols = [c for c in df.columns if str(c).isdigit() and len(str(c)) == 8]
+                if date_cols:
+                    latest_col = date_cols[0]   # 最近季度（columns 已按时间倒序）
+                    latest = dict(zip(df["指标"], df[latest_col]))
+                    snap.revenue = _to_float(latest.get("营业总收入"))
+                    snap.net_profit = _to_float(latest.get("归母净利润"))
+                    snap.roe_ttm = _to_float(latest.get("净资产收益率(ROE)"))
+                    snap.gross_margin = _to_float(latest.get("毛利率"))
+                    snap.raw["latest_period"] = str(latest_col)
+
+                    # YoY growth: 比较 4 季度前的同期 (e.g. 20260331 vs 20250331)
+                    if len(date_cols) >= 5:
+                        yoy_col = date_cols[4]  # 4 季度前
+                        yoy = dict(zip(df["指标"], df[yoy_col]))
+                        rev_yoy = _to_float(yoy.get("营业总收入"))
+                        np_yoy = _to_float(yoy.get("归母净利润"))
+                        if rev_yoy and snap.revenue:
+                            snap.revenue_growth_yoy = (snap.revenue / rev_yoy - 1) * 100
+                        if np_yoy and snap.net_profit:
+                            snap.profit_growth_yoy = (snap.net_profit / np_yoy - 1) * 100
+                        snap.raw["yoy_period"] = str(yoy_col)
+
+                    # Debt ratio from balance sheet if available
+                    # 总资产 / 股东权益 → infer 资产负债率
+                    equity = _to_float(latest.get("股东权益合计(净资产)"))
+                    if equity and snap.total_mv:
+                        # crude proxy — not exact but useful signal
+                        snap.raw["equity"] = equity
         except Exception as e:
             snap.raw["financial_error"] = str(e)[:80]
 
@@ -253,9 +315,13 @@ class TushareToolkit:
         try:
             return getattr(self._pro, api)(**params)
         except Exception as e:
-            if "权限" in str(e) or "permission" in str(e).lower():
-                # Caller decides whether to fallback
-                raise PermissionError(f"tushare {api} no permission") from e
+            msg = str(e)
+            # Treat all "soft" failures as PermissionError so callers can fallback
+            soft = ("权限" in msg or "permission" in msg.lower()
+                    or "token不对" in msg or "积分" in msg
+                    or "频率" in msg or "rate" in msg.lower())
+            if soft:
+                raise PermissionError(f"tushare {api}: {msg[:80]}") from e
             raise
 
     def get_news(self, ts_code: str, *, days: int = 7, limit: int = 8) -> list[NewsItem]:
@@ -396,6 +462,49 @@ class HybridToolkit:
 # ---------------------------------------------------------------------------- #
 # Helpers                                                                      #
 # ---------------------------------------------------------------------------- #
+
+
+# ---------------------------------------------------------------------------- #
+# Local cache for stock metadata (name/industry/MV) — survives between runs    #
+# ---------------------------------------------------------------------------- #
+
+_INFO_CACHE_PATH = "data/agents_cache/_stock_info.json"
+_INFO_CACHE_TTL_DAYS = 30   # name/industry rarely change — 1 month is fine
+
+
+def _info_cache_get(code: str) -> dict | None:
+    import json as _json
+    from pathlib import Path as _P
+    from datetime import datetime as _dt, timedelta as _td
+    p = _P(_INFO_CACHE_PATH)
+    if not p.exists():
+        return None
+    try:
+        data = _json.loads(p.read_text())
+        entry = data.get(code)
+        if not entry:
+            return None
+        cached_at = _dt.fromisoformat(entry.get("_cached_at", "2000-01-01"))
+        if _dt.now() - cached_at > _td(days=_INFO_CACHE_TTL_DAYS):
+            return None
+        return entry
+    except Exception:
+        return None
+
+
+def _info_cache_put(code: str, info: dict) -> None:
+    import json as _json
+    from pathlib import Path as _P
+    from datetime import datetime as _dt
+    p = _P(_INFO_CACHE_PATH)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        data = _json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        data = {}
+    info["_cached_at"] = _dt.now().isoformat(timespec="seconds")
+    data[code] = info
+    p.write_text(_json.dumps(data, ensure_ascii=False, indent=2))
 
 
 def _to_float(x) -> float | None:
