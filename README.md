@@ -5,10 +5,35 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-覆盖 **数据 → 因子 → ML 模型 → 回测 → 实盘 → 监控** 的中国A股量化全栈框架。
+覆盖 **数据 → 因子 → ML 模型 → 回测 → Paper Trading → 监控** 的中国A股量化全栈框架，
+**真实盘桥（QMT / CTP）目前是 stub**，见下方 [实施状态](#实施状态) 表。
 内置可选的 **LLM agent overlay**（TradingAgents 启发）作为量化选股后的"质量门"。
 
 > ⚠️ **本系统不承诺盈利**。它提供的是稳健的工程基础设施和正确的 A股微观摩擦建模，alpha 仍需自行研究。
+
+## 实施状态
+
+| 模块 | 状态 | 说明 |
+|---|---|---|
+| `open_quant.data` | ✅ Production | 850k 行日线 / 6.4 年 / 574 票 / AkShare + Tushare |
+| `open_quant.factors` | ✅ Production | 125 因子（Baseline 10 + Alpha101 57 + GTJA Alpha191 55 + ML 3）|
+| `open_quant.backtest` | ✅ Production | 事件驱动 + A股规则（T+1/涨跌停/停牌/成本）|
+| `open_quant.strategies` | ✅ Production | `MultiFactorStrategy` 跑通；CTA / Event-driven 是简化版 |
+| `open_quant.portfolio` | ⚠️ Partial | cvxpy 优化器 + 中性化已实现；Barra 风险模型框架级 |
+| `open_quant.agents` | ✅ Production | DeepSeek LLM + 多源新闻（CLS / 财新 / 公告）|
+| `open_quant.paper_state` | ✅ Production | **仅对历史回放**；实时 paper 也可跑（见下） |
+| `open_quant.execution` (OMS) | ✅ Production | 订单状态机 + 风控钩子 + 对账逻辑 |
+| `open_quant.execution.PaperBroker` | ✅ Production | 内存撮合 |
+| `open_quant.execution.QMTBroker` | ❌ **Stub** | `submit/cancel/query` 全是 `NotImplementedError`，需要 QMT 账号 + xtquant wire-up |
+| `open_quant.execution.CTPBroker` | ❌ **Stub** | 同上，期货 vnpy_ctp 桥未实现 |
+| `open_quant.monitor.Metrics` (Prom) | ⚠️ Framework | 指标定义齐了，未在实盘 loop 里调用过 |
+| `open_quant.monitor.AlertManager` | ⚠️ Framework | 飞书/钉钉 webhook 代码有，**生产 webhook 未配过** |
+| `open_quant.monitor.daily_report` | ✅ Production | Paper trading HTML 报告每天产 |
+| `open_quant.pipelines` (Prefect) | ⚠️ Framework | flow 装饰器在，但 **scheduler 从未启动过实盘 loop** |
+
+**结论**：当前系统是一个**完备的研究 + paper trading 平台**，**不是实盘交易系统**。
+上实盘还需要：开 QMT 账号 → wire `QMTBroker` → 实时行情接入 → paper 2-4 周 → 灰度小资金。
+详见 [docs/ROADMAP_TO_LIVE.md](docs/ROADMAP_TO_LIVE.md)。
 
 ## 系统一览
 
@@ -180,17 +205,20 @@ qualitative_overlay:
 
 ## 模块速览
 
+完整状态见 [实施状态](#实施状态)；下面只列文件 / 作用。
+
 | 模块 | 作用 |
 |---|---|
 | `open_quant.data` | 数据采集、复权、标的池、A股日历 |
 | `open_quant.factors` | 因子计算引擎 + 因子库 + IC/IR 评估 |
 | `open_quant.backtest` | A 股精确事件回测 + 成本模型 + 微观规则 |
 | `open_quant.strategies` | 多因子日频 / Dual Thrust CTA / 业绩驱动 |
-| `open_quant.portfolio` | 组合优化器（cvxpy）+ Barra 风格暴露 |
-| `open_quant.execution` | OMS + PaperBroker / QMT / CTP 桥 |
-| `open_quant.monitor` | Prometheus 指标 + 飞书告警 + HTML 日报 |
+| `open_quant.portfolio` | 组合优化器（cvxpy）+ 中性化 |
+| `open_quant.execution` | OMS（实现）+ PaperBroker（实现）+ QMT/CTP（**stub**）|
+| `open_quant.monitor` | Prometheus 指标 + 飞书/钉钉告警 + HTML 日报 |
 | `open_quant.agents` | LLM 二审（toolkit / overlay / prompts）|
 | `open_quant.paper_state` | Paper trading 状态持久化 (JSON) |
+| `open_quant.pipelines` | Prefect 调度框架（**未启动过 live loop**）|
 
 ## 文档
 
