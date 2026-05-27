@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.openquant.daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/zjw/Documents/startup/chuanye/scripts/daily_paper_cron.sh</string>
+    </array>
+
+    <!-- Fire at 17:00 every weekday (Mon-Fri). launchd uses local TZ. -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Weekday</key><integer>1</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>2</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>3</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>4</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>5</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+    </array>
+
+    <!-- If Mac was asleep at 17:00, run as soon as it wakes. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Restart up to 3 times if script crashes. Set false because the script
+         is supposed to exit normally even on failures (just logs). -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/zjw/Documents/startup/chuanye/logs/launchd.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/zjw/Documents/startup/chuanye/logs/launchd.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/zjw/Documents/startup/chuanye</string>
+</dict>
+</plist>

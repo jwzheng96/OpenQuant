@@ -174,16 +174,39 @@ schedule.every(1).minutes.do(oms.reconcile)
 
 ## Phase B — 实时 paper trading（2–4 周硬性要求）
 
-### B.1 改造现有 `paper_daily.py`
+### B.1 数据 sync — `scripts/sync_today_em.py`
 
-当前是"每天一次的离线回放"。改造成：
-- 盘前 08:30：拉最新数据 → 生成今天 target_weights → 写 `pending_orders.json`
-- 盘后 17:00：拉今天日线 → 撮合 pending_orders → 更新 NAV → 推 Prometheus 指标
+A 股 EOD 数据 sync 关键组件。直连东方财富 `push2his.eastmoney.com/api/qt/stock/kline/get`，绕开 AkShare 内部 broken session（在有 Clash/Shadowsocks 系统代理时 AkShare 的 requests.Session 即使 `trust_env=False` 仍会 ConnectionError）。
+
+性能：**单日 574 票 ~104 秒**（vs AkShare 4 小时）。
+
+使用：
+```bash
+# 默认 today
+python scripts/sync_today_em.py
+
+# 指定某天补数据
+python scripts/sync_today_em.py --date 2026-05-26
+```
+
+幂等增量：只补 DB 缺的 symbol。
+
+### B.2 改造 `paper_daily.py` 实时模式
+
+当前是"每天一次的离线回放"。组合 sync + paper 成实时模式：
+- 盘前 08:30：跑前一日 paper → 生成今天 target_weights → 写 `pending_orders.json`
+- 盘后 17:00：`sync_today_em.py` → `paper_daily.py --once today` → 撮合 + MTM + NAV
 - 周末：跑周报 + 因子衰减检查
 
-**注意**：周一-周五 17:00 后才能拿到当日完整日线，AkShare 一般 18:00-19:00 才稳定有。
+**注意**：A 股 15:00 收盘，EOD 数据 17:00 后稳定。盘中跑 paper 拿到的是 intraday 价 snapshot（close 字段实际是当前价），用于 demo 可，做正式 NAV 必须 17:00 后跑。
 
-### B.2 验证 checklist
+### B.3 自动化 — macOS launchd
+
+参考 `scripts/daily_paper_cron.sh` + `~/Library/LaunchAgents/com.openquant.daily.plist` —— 每天 17:00 自动跑。
+
+### B.4 验证 checklist
+
+### B.5 验证 checklist
 
 每项都要"刻意触发"测试，不能等真出问题：
 
