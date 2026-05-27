@@ -1,0 +1,36 @@
+name: mf_ml_strict_ensemble
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# LGB + XGB ensemble — each factor is z-scored independently in the strategy
+# layer (see MultiFactorStrategy.on_date), so weight 0.5/0.5 means equal
+# weighting on the z-score scale. Setting one weight to 0 toggles that model
+# off without needing a different yaml.
+factors:
+  - name: ml_lgb_strict
+    weight: 0.5
+    direction: 1
+  - name: ml_xgb_strict
+    weight: 0.5
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

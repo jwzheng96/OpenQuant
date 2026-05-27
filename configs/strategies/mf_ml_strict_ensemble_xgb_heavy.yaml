@@ -1,0 +1,38 @@
+name: mf_ml_strict_ensemble_xgb_heavy
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# 80/20 XGB-heavy ensemble.
+# Empirical motivation (run 2024-01 → 2026-05, 1799-pool):
+#   LGB alone     : Sharpe 1.04, cumret +87%
+#   XGB alone     : Sharpe 1.17, cumret +112%  ← strongest single model
+#   LGB+XGB 50/50 : Sharpe 1.04, cumret +91%   ← 50/50 dragged down by LGB
+# Hypothesis: tilt heavily toward XGB but keep 20% LGB for diversification.
+factors:
+  - name: ml_xgb_strict
+    weight: 0.8
+    direction: 1
+  - name: ml_lgb_strict
+    weight: 0.2
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

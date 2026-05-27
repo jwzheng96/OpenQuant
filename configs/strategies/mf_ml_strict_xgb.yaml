@@ -1,0 +1,31 @@
+name: mf_ml_strict_xgb
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Same setup as mf_ml_strict but uses XGBoost-trained factor instead of LightGBM.
+# Useful as the A/B baseline for the ensemble comparison.
+factors:
+  - name: ml_xgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

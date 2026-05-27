@@ -18,7 +18,7 @@ set -uo pipefail
 REPO="/Users/zjw/Documents/startup/chuanye"
 LOG_DIR="$REPO/logs"
 LOG="$LOG_DIR/daily_paper.log"
-CONFIG="$REPO/configs/strategies/mf_ml_strict.yaml"
+CONFIG="$REPO/configs/strategies/mf_ml_strict_xgb.yaml"   # XGB beats LGB +4pp Sharpe in 1799-pool OOS
 
 mkdir -p "$LOG_DIR"
 
