@@ -15,7 +15,7 @@
 
 | 模块 | 状态 | 说明 |
 |---|---|---|
-| `open_quant.data` | ✅ Production | 850k 行日线 / 6.4 年 / 574 票 / AkShare + Tushare |
+| `open_quant.data` | ✅ Production | 2.2M+ 行日线 / 6.4+ 年 / 1799 票 / AkShare 直连 EM |
 | `open_quant.factors` | ✅ Production | 125 因子（Baseline 10 + Alpha101 57 + GTJA Alpha191 55 + ML 3）|
 | `open_quant.backtest` | ✅ Production | 事件驱动 + A股规则（T+1/涨跌停/停牌/成本）|
 | `open_quant.strategies` | ✅ Production | `MultiFactorStrategy` 跑通；CTA / Event-driven 是简化版 |
@@ -77,8 +77,8 @@ flowchart LR
 
 | 类别 | 规模 |
 |---|---|
-| 股票池 | **574** 只（HS300 头 150 + ZZ500 全员 425 + 沪深300 指数）|
-| 日线 | **850k+** 行 / 2020-01-02 → 2026-05-25（**6.4 年**）|
+| 股票池 | **1799** 只（HS300 + CSI500 + CSI1000 全员，99.8% canonical 覆盖）|
+| 日线 | **2.2M+** 行 / 2020-01-02 → 今日（**6.4+ 年**）|
 | 估值（PE/PB/MV）| **685k** 行 / 2021-05 起（akshare 近五年上限）|
 | 因子 | **125 个**（10 baseline + 57 Alpha101 + 55 GTJA Alpha191 + ml_lgb 系列）|
 | 测试 | 74/74 ✅ |

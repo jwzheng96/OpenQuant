@@ -175,7 +175,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    PANEL[("DuckDB Panel<br/>574 stk × 6.4 年")] --> ENG[FactorEngine]
+    PANEL[("DuckDB Panel<br/>1799 stk × 6.4+ 年")] --> ENG[FactorEngine]
 
     subgraph LIB [factors/library/]
         BASE[baseline.py<br/>10 因子]
