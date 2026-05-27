@@ -1,0 +1,32 @@
+name: mf_ml_strict_xgb_top50
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# A3: XGB baseline but top_n=50 instead of 30. Hypothesis: more diversification
+# → lower single-name concentration → lower MDD at the cost of some alpha
+# dilution. Each position size drops 5%→3% so naturally less concentrated.
+factors:
+  - name: ml_xgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 50              # ← was 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.03   # 1/50 ≈ 2%, set cap slightly above
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

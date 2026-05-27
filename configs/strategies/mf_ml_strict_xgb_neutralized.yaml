@@ -1,0 +1,34 @@
+name: mf_ml_strict_xgb_neutralized
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# A1: XGB baseline + Barra-light cross-sectional neutralization on
+#     (log_mv, vol_60d, mom_120d, bp). Strips style beta from the alpha
+#     signal — should reduce MDD and improve Sharpe at the cost of some
+#     absolute return (since current XGB's +112% is partly riding the
+#     small-cap / momentum factor exposure).
+factors:
+  - name: ml_xgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: true               # ← the key switch
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"
