@@ -11,6 +11,7 @@ import {
   Database,
   Bell,
   ShieldAlert,
+  Microscope,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const NAV: NavItem[] = [
   { to: "/holdings", i18nKey: "nav.holdings", Icon: Briefcase },
   { to: "/trading", i18nKey: "nav.trading", Icon: Receipt },
   { to: "/strategies", i18nKey: "nav.strategies", Icon: ListChecks },
+  { to: "/factors", i18nKey: "nav.factors", Icon: Microscope },
   { to: "/backtest", i18nKey: "nav.backtest", Icon: Play },
   { to: "/data", i18nKey: "nav.data", Icon: Database },
   { to: "/risk", i18nKey: "nav.risk", Icon: ShieldAlert },

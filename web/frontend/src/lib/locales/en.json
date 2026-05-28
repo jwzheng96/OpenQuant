@@ -8,7 +8,22 @@
     "data": "Data",
     "alerts": "Alerts",
     "risk": "Risk",
-    "stock": "Stock"
+    "stock": "Stock",
+    "factors": "Factors"
+  },
+  "factors": {
+    "title": "Factor Library",
+    "subtitle": "Research workbench — IC time series / quintile backtest / decay",
+    "horizon": "Horizon",
+    "cols": {
+      "name": "Factor",
+      "meanIc": "Mean Rank IC",
+      "icir": "ICIR",
+      "posPct": "Positive IC %",
+      "nDays": "Days",
+      "period": "Period"
+    },
+    "empty": "No factors available"
   },
   "risk": {
     "title": "Risk Dashboard",

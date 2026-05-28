@@ -54,7 +54,7 @@ export function Stock() {
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
-        <StockDetail strategy={active} symbol={symbol} />
+        <StockDetail strategy={active} symbol={symbol} compact={false} />
       </div>
     </div>
   );

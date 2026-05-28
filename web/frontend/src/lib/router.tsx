@@ -23,6 +23,8 @@ import { Data } from "@/routes/Data";
 import { Alerts } from "@/routes/Alerts";
 import { Risk } from "@/routes/Risk";
 import { Stock } from "@/routes/Stock";
+import { Factors } from "@/routes/Factors";
+import { FactorDetail } from "@/routes/FactorDetail";
 import { Login } from "@/routes/Login";
 import { ProtectedShell } from "@/layouts/ProtectedShell";
 
@@ -95,6 +97,19 @@ const stockRoute = createRoute({
   path: "/stock/$symbol",
   component: Stock,
 });
+const factorsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/factors",
+  component: Factors,
+});
+const factorDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/factors/$name",
+  component: FactorDetail,
+  validateSearch: (s: Record<string, unknown>) => ({
+    horizon: s.horizon != null ? Number(s.horizon) : undefined,
+  }),
+});
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -108,6 +123,8 @@ const routeTree = rootRoute.addChildren([
     riskRoute,
     alertsRoute,
     stockRoute,
+    factorsRoute,
+    factorDetailRoute,
   ]),
 ]);
 

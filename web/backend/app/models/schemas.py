@@ -311,3 +311,55 @@ class AlertResp(BaseModel):
 class AlertSummary(BaseModel):
     unacked_count: int
     critical_unacked: int
+
+
+# ---------------------------------------------------------------------------- #
+# Factor research workbench                                                     #
+# ---------------------------------------------------------------------------- #
+
+
+class FactorListItem(BaseModel):
+    name: str
+    available: bool = True
+    mean_rank_ic: float | None = None
+    icir: float | None = None
+    n_days: int | None = None
+    pos_days_pct: float | None = None
+    first_date: str | None = None
+    last_date: str | None = None
+
+
+class IcPoint(BaseModel):
+    trade_date: str
+    ic: float
+    rank_ic: float
+    n_obs: int
+
+
+class QuintilePoint(BaseModel):
+    trade_date: str
+    q1: float
+    q2: float
+    q3: float
+    q4: float
+    q5: float
+    top_minus_bottom: float
+    cum_q1: float
+    cum_q2: float
+    cum_q3: float
+    cum_q4: float
+    cum_q5: float
+    cum_top_minus_bottom: float
+
+
+class DecayPoint(BaseModel):
+    horizon: int
+    mean_rank_ic: float
+    icir: float
+
+
+class FactorDetailResp(BaseModel):
+    summary: FactorListItem
+    ic_series: list[IcPoint] = []
+    quintile_series: list[QuintilePoint] = []
+    decay: list[DecayPoint] = []

@@ -15,6 +15,7 @@ import { StockTag } from "@/components/ui/StockTag";
 import { PriceDelta } from "@/components/ui/PriceDelta";
 import { SideBadge } from "@/components/ui/StatusBadge";
 import { KlineMini, type KlineBar, type FillMark } from "@/components/charts/KlineMini";
+import { KlineFull } from "@/components/charts/KlineFull";
 import { fmtMoney, fmtNum, fmtInt, priceColor } from "@/lib/format";
 
 type FactorSnapshot = {
@@ -58,14 +59,21 @@ type StockDetail = {
 export function StockDetail({
   strategy,
   symbol,
+  compact = true,
 }: {
   strategy: string;
   symbol: string;
+  /** Compact (side-panel) variant uses KlineMini + 60 bars.
+   *  Non-compact (full /stock page) uses KlineFull + 250 bars + indicators. */
+  compact?: boolean;
 }) {
+  const klineDays = compact ? 60 : 250;
   const { data, isLoading, error } = useQuery<StockDetail>({
-    queryKey: ["stock-detail", strategy, symbol],
+    queryKey: ["stock-detail", strategy, symbol, klineDays],
     queryFn: async () =>
-      (await api.get(`/paper/${strategy}/stock/${symbol}/detail`)).data,
+      (await api.get(`/paper/${strategy}/stock/${symbol}/detail`, {
+        params: { kline_days: klineDays },
+      })).data,
     refetchInterval: 60_000,
   });
 
@@ -105,9 +113,14 @@ export function StockDetail({
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted">
           <TrendingUp className="size-3.5" />
           K 线 + 成交标记（红 ▲ 买 / 绿 ▼ 卖）
+          {!compact && <span className="text-foreground/60">· {data.kline.length} 个交易日</span>}
         </h3>
-        <div className="rounded border border-border bg-bg">
-          <KlineMini bars={data.kline} fills={fills} height={280} />
+        <div className="rounded border border-border bg-bg p-2">
+          {compact ? (
+            <KlineMini bars={data.kline} fills={fills} height={280} />
+          ) : (
+            <KlineFull bars={data.kline} fills={fills} height={520} />
+          )}
         </div>
       </section>
 

@@ -19,6 +19,7 @@ from app.api.auth import router as auth_router
 from app.api.backtest import router as backtest_router
 from app.api.data import router as data_router
 from app.api.events import router as events_router
+from app.api.factors import router as factors_router
 from app.api.paper import router as paper_router
 from app.api.strategies import router as strategies_router
 
@@ -31,6 +32,7 @@ api_v1.include_router(data_router)
 api_v1.include_router(backtest_router)
 api_v1.include_router(events_router)
 api_v1.include_router(alerts_router)
+api_v1.include_router(factors_router)
 
 
 @api_v1.get("/", tags=["meta"])

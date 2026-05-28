@@ -8,7 +8,22 @@
     "data": "数据",
     "alerts": "告警",
     "risk": "风险",
-    "stock": "个股"
+    "stock": "个股",
+    "factors": "因子"
+  },
+  "factors": {
+    "title": "因子库",
+    "subtitle": "因子研究工作台 — IC 时序 / 分位回测 / 衰减半衰期",
+    "horizon": "持有期",
+    "cols": {
+      "name": "因子",
+      "meanIc": "平均 Rank IC",
+      "icir": "ICIR",
+      "posPct": "正 IC 占比",
+      "nDays": "天数",
+      "period": "区间"
+    },
+    "empty": "无可用因子"
   },
   "risk": {
     "title": "风险大盘",
