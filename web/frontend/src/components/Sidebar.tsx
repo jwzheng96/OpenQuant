@@ -12,6 +12,7 @@ import {
   Bell,
   ShieldAlert,
   Microscope,
+  Eye,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -30,6 +31,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", i18nKey: "nav.dashboard", Icon: LayoutDashboard },
   { to: "/holdings", i18nKey: "nav.holdings", Icon: Briefcase },
+  { to: "/watchlist", i18nKey: "nav.watchlist", Icon: Eye },
   { to: "/trading", i18nKey: "nav.trading", Icon: Receipt },
   { to: "/strategies", i18nKey: "nav.strategies", Icon: ListChecks },
   { to: "/factors", i18nKey: "nav.factors", Icon: Microscope },

@@ -25,6 +25,7 @@ import { Risk } from "@/routes/Risk";
 import { Stock } from "@/routes/Stock";
 import { Factors } from "@/routes/Factors";
 import { FactorDetail } from "@/routes/FactorDetail";
+import { Watchlist } from "@/routes/Watchlist";
 import { Login } from "@/routes/Login";
 import { ProtectedShell } from "@/layouts/ProtectedShell";
 
@@ -110,6 +111,11 @@ const factorDetailRoute = createRoute({
     horizon: s.horizon != null ? Number(s.horizon) : undefined,
   }),
 });
+const watchlistRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/watchlist",
+  component: Watchlist,
+});
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -125,6 +131,7 @@ const routeTree = rootRoute.addChildren([
     stockRoute,
     factorsRoute,
     factorDetailRoute,
+    watchlistRoute,
   ]),
 ]);
 

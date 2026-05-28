@@ -9,7 +9,14 @@
     "alerts": "告警",
     "risk": "风险",
     "stock": "个股",
-    "factors": "因子"
+    "factors": "因子",
+    "watchlist": "观察列表"
+  },
+  "watchlist": {
+    "title": "观察列表",
+    "subtitle": "保存关注的股票，实时跟踪 1/5/20 日涨跌",
+    "add": "加入",
+    "empty": "观察列表为空，添加你想跟踪的股票"
   },
   "factors": {
     "title": "因子库",

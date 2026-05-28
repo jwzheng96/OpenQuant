@@ -190,6 +190,26 @@ class Task(Base):
 
 
 # ---------------------------------------------------------------------------- #
+# Watchlist                                                                     #
+# ---------------------------------------------------------------------------- #
+
+
+class Watchlist(Base):
+    __tablename__ = "watchlist"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    symbol: Mapped[str] = mapped_column(String(16), primary_key=True)
+    note: Mapped[str | None] = mapped_column(Text)
+    added_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+# ---------------------------------------------------------------------------- #
 # Alerts (Phase 3)                                                              #
 # ---------------------------------------------------------------------------- #
 

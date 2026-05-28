@@ -363,3 +363,24 @@ class FactorDetailResp(BaseModel):
     ic_series: list[IcPoint] = []
     quintile_series: list[QuintilePoint] = []
     decay: list[DecayPoint] = []
+
+
+# ---------------------------------------------------------------------------- #
+# Watchlist                                                                     #
+# ---------------------------------------------------------------------------- #
+
+
+class WatchlistAddReq(BaseModel):
+    symbol: str = Field(min_length=6, max_length=16, pattern=r"^\d{6}\.[A-Z]{2}$")
+    note: str | None = Field(default=None, max_length=255)
+
+
+class WatchlistItem(BaseModel):
+    symbol: str
+    name: str
+    note: str | None = None
+    added_at: str
+    last_close: float | None = None
+    pct_chg_today: float | None = None
+    pct_chg_5d: float | None = None
+    pct_chg_20d: float | None = None

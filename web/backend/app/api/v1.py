@@ -22,6 +22,7 @@ from app.api.events import router as events_router
 from app.api.factors import router as factors_router
 from app.api.paper import router as paper_router
 from app.api.strategies import router as strategies_router
+from app.api.watchlist import router as watchlist_router
 
 api_v1 = APIRouter(prefix="/api/v1")
 
@@ -33,6 +34,7 @@ api_v1.include_router(backtest_router)
 api_v1.include_router(events_router)
 api_v1.include_router(alerts_router)
 api_v1.include_router(factors_router)
+api_v1.include_router(watchlist_router)
 
 
 @api_v1.get("/", tags=["meta"])

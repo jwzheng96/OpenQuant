@@ -9,7 +9,14 @@
     "alerts": "Alerts",
     "risk": "Risk",
     "stock": "Stock",
-    "factors": "Factors"
+    "factors": "Factors",
+    "watchlist": "Watchlist"
+  },
+  "watchlist": {
+    "title": "Watchlist",
+    "subtitle": "Saved stocks with live 1/5/20-day returns",
+    "add": "Add",
+    "empty": "Watchlist is empty — add a stock to track"
   },
   "factors": {
     "title": "Factor Library",
