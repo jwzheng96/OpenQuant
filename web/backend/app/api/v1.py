@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api.alerts import router as alerts_router
 from app.api.auth import router as auth_router
 from app.api.backtest import router as backtest_router
 from app.api.data import router as data_router
@@ -29,6 +30,7 @@ api_v1.include_router(paper_router)
 api_v1.include_router(data_router)
 api_v1.include_router(backtest_router)
 api_v1.include_router(events_router)
+api_v1.include_router(alerts_router)
 
 
 @api_v1.get("/", tags=["meta"])
@@ -44,6 +46,6 @@ async def root() -> dict:
             "data":       "/data/{benchmark|health|stock/{symbol}/history|stock/{symbol}/factor/{factor}}",
             "backtest":   "POST /backtest/run, GET /backtest/tasks, GET /backtest/tasks/{id}, POST /backtest/tasks/{id}/cancel",
             "events":     "GET /events/tasks/{id}  [SSE]",
-            "admin":      "TBD (Phase 3)",
+            "alerts":     "GET /alerts, /alerts/summary, POST /alerts/{id}/ack",
         },
     }

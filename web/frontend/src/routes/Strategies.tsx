@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { fmtPct, fmtNum, priceColor } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SidePanel } from "@/components/ui/SidePanel";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import { CompareView } from "@/components/CompareView";
 
 type StrategyRow = {
@@ -129,7 +130,26 @@ export function Strategies() {
           />
           仅显示已回测
         </label>
-        <div className="ml-auto text-xs text-muted">提示: 勾选 ≥2 个策略后点 "对比"</div>
+        <div className="ml-auto flex items-center gap-3 text-xs text-muted">
+          <span>提示: 勾选 ≥2 个策略后点 "对比"</span>
+          <ExportCsvButton<StrategyRow>
+            rows={filtered}
+            filenamePrefix="strategies"
+            cols={[
+              { header: "name", get: (r) => r.meta.name },
+              { header: "type", get: (r) => r.meta.type },
+              { header: "factors", get: (r) => r.meta.factors.map((f) => `${f.name}x${f.weight}`).join("|") },
+              { header: "top_n", get: (r) => r.meta.top_n },
+              { header: "rebalance_freq", get: (r) => r.meta.rebalance_freq },
+              { header: "is_active", get: (r) => r.meta.is_active ? "yes" : "no" },
+              { header: "total_return_pct", get: (r) => r.kpi.total_return != null ? (r.kpi.total_return * 100).toFixed(4) : "" },
+              { header: "sharpe", get: (r) => r.kpi.sharpe?.toFixed(4) ?? "" },
+              { header: "max_drawdown_pct", get: (r) => r.kpi.max_drawdown != null ? (r.kpi.max_drawdown * 100).toFixed(4) : "" },
+              { header: "annualized_vol_pct", get: (r) => r.kpi.annualized_vol != null ? (r.kpi.annualized_vol * 100).toFixed(4) : "" },
+              { header: "last_run", get: (r) => r.kpi.last_run ?? "" },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">

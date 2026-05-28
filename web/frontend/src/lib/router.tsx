@@ -20,6 +20,9 @@ import { Trading } from "@/routes/Trading";
 import { Strategies } from "@/routes/Strategies";
 import { Backtest } from "@/routes/Backtest";
 import { Data } from "@/routes/Data";
+import { Alerts } from "@/routes/Alerts";
+import { Risk } from "@/routes/Risk";
+import { Stock } from "@/routes/Stock";
 import { Login } from "@/routes/Login";
 import { ProtectedShell } from "@/layouts/ProtectedShell";
 
@@ -77,6 +80,21 @@ const dataRoute = createRoute({
   path: "/data",
   component: Data,
 });
+const alertsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/alerts",
+  component: Alerts,
+});
+const riskRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/risk",
+  component: Risk,
+});
+const stockRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/stock/$symbol",
+  component: Stock,
+});
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -87,6 +105,9 @@ const routeTree = rootRoute.addChildren([
     strategiesRoute,
     backtestRoute,
     dataRoute,
+    riskRoute,
+    alertsRoute,
+    stockRoute,
   ]),
 ]);
 

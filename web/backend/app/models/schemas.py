@@ -282,3 +282,32 @@ class TaskResp(BaseModel):
     result: dict | None = None
     created_at: str
     duration_seconds: float | None = None
+
+
+# ---------------------------------------------------------------------------- #
+# Alerts                                                                        #
+# ---------------------------------------------------------------------------- #
+
+
+class AlertCreateReq(BaseModel):
+    severity: str = Field(pattern="^(info|warning|critical)$")
+    source: str = Field(min_length=1, max_length=64)
+    message: str = Field(min_length=1)
+    payload: dict | None = None
+
+
+class AlertResp(BaseModel):
+    id: int
+    severity: str
+    source: str
+    message: str
+    payload: dict | None = None
+    acked_by: str | None = None
+    acked_by_username: str | None = None
+    acked_at: str | None = None
+    created_at: str
+
+
+class AlertSummary(BaseModel):
+    unacked_count: int
+    critical_unacked: int

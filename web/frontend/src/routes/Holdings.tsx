@@ -19,7 +19,9 @@ import { StockTag } from "@/components/ui/StockTag";
 import { PriceDelta } from "@/components/ui/PriceDelta";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { StockDetail } from "@/components/StockDetail";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import { fmtMoney, fmtNum, fmtInt, priceColor } from "@/lib/format";
+import type { Column } from "@/lib/csv";
 
 type Position = {
   symbol: string;
@@ -179,7 +181,26 @@ export function Holdings() {
         </div>
       </div>
 
-      <div className="text-xs text-muted">提示: 点击任意行查看个股 K 线 + 成交历史 + 因子值</div>
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted">提示: 点击任意行查看个股 K 线 + 成交历史 + 因子值</div>
+        <ExportCsvButton<Position>
+          rows={rows}
+          filenamePrefix={`holdings_${active}`}
+          cols={[
+            { header: "symbol", get: (r) => r.symbol },
+            { header: "name", get: (r) => r.name },
+            { header: "qty", get: (r) => r.qty },
+            { header: "sellable_qty", get: (r) => r.sellable_qty },
+            { header: "avg_cost", get: (r) => r.avg_cost.toFixed(4) },
+            { header: "last_close", get: (r) => r.last_close ?? "" },
+            { header: "market_value", get: (r) => r.market_value?.toFixed(2) ?? "" },
+            { header: "pnl_amount", get: (r) => r.pnl_amount?.toFixed(2) ?? "" },
+            { header: "pnl_pct", get: (r) => r.pnl_pct != null ? (r.pnl_pct * 100).toFixed(4) : "" },
+            { header: "weight", get: (r) => r.weight != null ? (r.weight * 100).toFixed(4) : "" },
+            { header: "locked_qty", get: (r) => r.locked_qty },
+          ]}
+        />
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
         <table className="w-full text-sm">

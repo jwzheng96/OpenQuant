@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useDataHealth } from "@/hooks/useDashboard";
 import { StockTag } from "@/components/ui/StockTag";
 import { SideBadge, OrderStatusBadge } from "@/components/ui/StatusBadge";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import { fmtMoney, fmtInt, fmtNum, priceColor } from "@/lib/format";
 
 type FillRow = {
@@ -127,6 +128,23 @@ function FillsView({
         <div className="text-xs text-muted">
           {rows.length} 笔 · 总额 {fmtMoney(totalAmt)} · 总成本 {fmtMoney(totalCost)}
         </div>
+        <div className="ml-auto">
+          <ExportCsvButton<FillRow>
+            rows={rows}
+            filenamePrefix={`fills_${strategy}`}
+            cols={[
+              { header: "trade_date", get: (r) => r.trade_date },
+              { header: "symbol", get: (r) => r.symbol },
+              { header: "name", get: (r) => r.name },
+              { header: "side", get: (r) => r.side },
+              { header: "qty", get: (r) => r.qty },
+              { header: "price", get: (r) => r.price.toFixed(4) },
+              { header: "amount", get: (r) => r.amount.toFixed(2) },
+              { header: "cost", get: (r) => r.cost.toFixed(2) },
+              { header: "strategy", get: (r) => r.strategy },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -219,6 +237,25 @@ function OrdersView({
           <span className="font-mono">
             {rejStats.total > 0 ? ((rejStats.rejected / rejStats.total) * 100).toFixed(1) : "0"}%
           </span>
+        </div>
+        <div className="ml-auto">
+          <ExportCsvButton<OrderRow>
+            rows={rows}
+            filenamePrefix={`orders_${strategy}`}
+            cols={[
+              { header: "trade_date", get: (r) => r.trade_date },
+              { header: "client_id", get: (r) => r.client_id },
+              { header: "symbol", get: (r) => r.symbol },
+              { header: "name", get: (r) => r.name },
+              { header: "side", get: (r) => r.side },
+              { header: "qty", get: (r) => r.qty },
+              { header: "order_type", get: (r) => r.order_type },
+              { header: "status", get: (r) => r.status },
+              { header: "fill_qty", get: (r) => r.fill_qty },
+              { header: "fill_price", get: (r) => r.fill_price ?? "" },
+              { header: "rejected_reason", get: (r) => r.rejected_reason ?? "" },
+            ]}
+          />
         </div>
       </div>
 

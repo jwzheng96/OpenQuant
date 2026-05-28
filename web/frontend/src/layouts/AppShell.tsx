@@ -4,10 +4,12 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, User as UserIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Sidebar } from "@/components/Sidebar";
 import { bare } from "@/lib/api";
 import { useMe, useLogout } from "@/hooks/useAuth";
+import { ThemeLangSwitcher } from "@/components/ui/ThemeLangSwitcher";
 
 type Health = {
   status: string;
@@ -17,6 +19,7 @@ type Health = {
 };
 
 function HealthIndicator() {
+  const { t } = useTranslation();
   const { data, isError } = useQuery<Health>({
     queryKey: ["health"],
     queryFn: async () => (await bare.get("/healthz")).data,
@@ -31,26 +34,29 @@ function HealthIndicator() {
         }`}
       />
       <span className="tabular">
-        backend {ok ? data.environment : "?"}
+        {t("app.backend")} {ok ? data.environment : "?"}
       </span>
     </div>
   );
 }
 
 function NowClock() {
+  const { i18n } = useTranslation();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+  // Always show Shanghai time; locale just changes the date-format
   return (
     <span className="tabular text-xs text-muted">
-      {now.toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Shanghai" })}
+      {now.toLocaleString(i18n.language, { hour12: false, timeZone: "Asia/Shanghai" })}
     </span>
   );
 }
 
 function UserMenu() {
+  const { t } = useTranslation();
   const me = useMe();
   const logout = useLogout();
   if (!me.data) return null;
@@ -67,7 +73,7 @@ function UserMenu() {
         type="button"
         onClick={() => logout.mutate()}
         className="inline-flex items-center gap-1 rounded p-1.5 text-muted hover:bg-bg hover:text-foreground"
-        title="退出"
+        title={t("app.logout")}
       >
         <LogOut className="size-3.5" />
       </button>
@@ -76,18 +82,21 @@ function UserMenu() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
           <div className="text-sm font-medium text-foreground">
-            OpenQuant
-            <span className="ml-2 text-xs text-muted">/ 量化驾驶舱</span>
+            {t("app.title")}
+            <span className="ml-2 text-xs text-muted">/ {t("app.tagline")}</span>
           </div>
           <div className="flex items-center gap-4">
             <NowClock />
             <HealthIndicator />
+            <div className="h-4 w-px bg-border" />
+            <ThemeLangSwitcher />
             <div className="h-4 w-px bg-border" />
             <UserMenu />
           </div>

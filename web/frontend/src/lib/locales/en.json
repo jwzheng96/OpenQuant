@@ -1,0 +1,168 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "holdings": "Holdings",
+    "trading": "Trading",
+    "strategies": "Strategies",
+    "backtest": "Backtest",
+    "data": "Data",
+    "alerts": "Alerts",
+    "risk": "Risk",
+    "stock": "Stock"
+  },
+  "risk": {
+    "title": "Risk Dashboard",
+    "subtitle": "Concentration + board distribution + exposure",
+    "kpi": {
+      "gross": "Gross Market Value",
+      "grossExposure": "Gross Exposure (MV/NAV)",
+      "cashPct": "Cash %",
+      "positions": "Positions",
+      "maxWeight": "Largest Single",
+      "top5Concentration": "Top 5 Concentration",
+      "top10Concentration": "Top 10 Concentration"
+    },
+    "boardDistribution": "Board Distribution",
+    "topConcentration": "Top 10 by Weight",
+    "boards": {
+      "sh_main": "SSE Main",
+      "sz_main": "SZSE Main",
+      "chinext": "ChiNext",
+      "star": "STAR",
+      "bse": "BSE",
+      "other": "Other"
+    },
+    "weightHist": "Weight Distribution",
+    "noPositions": "No positions — risk analytics N/A"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "subtitle": "Unacknowledged alerts + history",
+    "filterAll": "All",
+    "filterUnacked": "Unacked only",
+    "severity": {
+      "info": "Info",
+      "warning": "Warn",
+      "critical": "Critical"
+    },
+    "cols": {
+      "severity": "Level",
+      "source": "Source",
+      "message": "Message",
+      "createdAt": "Created",
+      "ackedBy": "Acked by",
+      "action": "Action"
+    },
+    "ack": "Ack",
+    "acked": "Acked",
+    "empty": "No alerts"
+  },
+  "app": {
+    "title": "OpenQuant",
+    "tagline": "Quant Ops Console",
+    "backend": "backend",
+    "logout": "Log out",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "language": "Language"
+  },
+  "common": {
+    "loading": "Loading…",
+    "loadFailed": "Failed to load",
+    "noData": "No data",
+    "tip": "Tip",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "close": "Close",
+    "export": "Export",
+    "filter": "Filter",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "dashboard": {
+    "kpi": {
+      "currentNav": "Current NAV",
+      "totalReturn": "Total Return",
+      "todayPnl": "Today P&L",
+      "sharpe": "Sharpe (ann.)",
+      "maxDrawdown": "Max Drawdown",
+      "positionsAndCash": "Positions / Cash"
+    },
+    "navChart": "NAV vs HS300 (rebased=100) + Drawdown",
+    "monthlyHeatmap": "Monthly Returns Heatmap (red=up / green=down, A-share)",
+    "recentFills": "Recent Fills",
+    "active": "active",
+    "lastRun": "last run",
+    "period": "period",
+    "tradingDays": "trading days"
+  },
+  "holdings": {
+    "title": "Current Holdings",
+    "tip": "Tip: click any row to see K-line + fills + factors",
+    "cols": {
+      "symbol": "Symbol / Name",
+      "qty": "Qty / Sellable",
+      "avgCost": "Avg Cost",
+      "lastClose": "Last Close",
+      "marketValue": "Market Value",
+      "pnlAmount": "Unrealised P&L",
+      "pnlPct": "P&L %",
+      "weight": "Weight",
+      "sellableHint": "sellable"
+    },
+    "empty": "No positions"
+  },
+  "trading": {
+    "title": "Trading Activity",
+    "tabFills": "Fills",
+    "tabOrders": "Orders",
+    "filterSide": "All sides",
+    "filterBuy": "Buy only",
+    "filterSell": "Sell only",
+    "filterStatus": "All statuses",
+    "rejectionReasons": "Rejection Reasons",
+    "empty": {
+      "fills": "No fills",
+      "orders": "No orders"
+    }
+  },
+  "strategies": {
+    "title": "Strategies",
+    "filterName": "Filter by name…",
+    "onlyBacktested": "Only backtested",
+    "compare": "Compare",
+    "compareTip": "Select ≥2 strategies, then click Compare",
+    "clearSelection": "Clear selection"
+  },
+  "backtest": {
+    "title": "Backtest",
+    "subtitle": "Web submit + live log + task history",
+    "tabNew": "New",
+    "tabTasks": "History",
+    "form": {
+      "params": "Parameters",
+      "strategy": "Strategy yaml",
+      "initialCash": "Initial cash (¥)",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "reset": "Reset state (paper_state from initial cash)",
+      "submit": "Submit",
+      "submitting": "Submitting…",
+      "afterSubmit": "After submitting you'll see the live log",
+      "needTrader": "Requires trader+ role"
+    }
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "firstLoginHint": "First login default",
+    "verifying": "Verifying…"
+  }
+}
