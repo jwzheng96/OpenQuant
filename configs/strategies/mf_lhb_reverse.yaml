@@ -1,0 +1,32 @@
+name: mf_lhb_reverse
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Same lhb_signal as mf_lhb but direction=-1 — invert the smart-money
+# tilt because empirically the raw direction is a contrarian indicator
+# in 2024-2026 A-share (top of 龙虎榜 上榜 = already overheated, mean-reverts).
+factors:
+  - name: lhb_signal
+    weight: 1.0
+    direction: -1            # ← flipped
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

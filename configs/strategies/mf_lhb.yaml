@@ -1,0 +1,32 @@
+name: mf_lhb
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Standalone 龙虎榜 strategy. Signal = 5-day rolling sum of
+# (lhb_net_buy_amt / lhb_circ_mv) — pick top-30 by rolling smart-money
+# inflow, weekly rebalance.
+factors:
+  - name: lhb_signal
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

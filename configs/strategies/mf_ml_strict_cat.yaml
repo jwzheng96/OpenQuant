@@ -1,0 +1,32 @@
+name: mf_ml_strict_cat
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Single CatBoost factor strategy. CatBoost OOS Rank ICIR = 2.94 vs
+# XGB 2.70 and LGB 2.70 — slight edge on signal-quality, see if it
+# translates to backtest performance.
+factors:
+  - name: ml_cat_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

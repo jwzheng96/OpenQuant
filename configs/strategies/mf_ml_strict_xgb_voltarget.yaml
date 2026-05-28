@@ -1,0 +1,34 @@
+name: mf_ml_strict_xgb_voltarget
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# XGB baseline + vol-target. Scales gross exposure inversely with realized
+# benchmark vol. When HS300 20-day annualized vol > 20%, gross shrinks;
+# when < 20%, gross caps at 1.0.
+factors:
+  - name: ml_xgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+  vol_target_annual: 0.20         # target 20% annualized vol
+  vol_lookback_days: 20
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

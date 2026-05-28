@@ -50,6 +50,17 @@ class MultiFactorStrategy:
     # Hook fired after each overlay evaluation with the per-symbol decisions.
     # Useful for logging / inspection / paper trading state attribution.
     on_overlay_decisions: callable | None = None
+    # Risk overlays (None = disabled)
+    # Vol-target: scales gross exposure inversely with realized vol of the
+    # benchmark. e.g. 0.20 = target 20% annualized vol. When realized vol >
+    # target, gross is scaled down (capped at 1.0).
+    vol_target_annual: float | None = None
+    vol_lookback_days: int = 20
+    # Trend filter: if benchmark close < its N-day MA, go to cash entirely.
+    # Avoids deep drawdowns in confirmed bear markets at the cost of
+    # missing the first leg up.
+    trend_filter_symbol: str | None = None
+    trend_filter_ma: int = 200
 
     def __post_init__(self):
         self._engine = default_engine()
@@ -100,6 +111,20 @@ class MultiFactorStrategy:
     def on_date(self, d, panel: pl.DataFrame, positions, cash) -> dict[str, float] | None:
         if not self._should_rebalance(d):
             return None
+
+        # --- Trend filter: if benchmark closes below its N-day MA, liquidate ---
+        if self.trend_filter_symbol is not None:
+            import numpy as np
+            bench = (panel.filter(
+                        (pl.col("symbol") == self.trend_filter_symbol)
+                        & (pl.col("trade_date") <= d))
+                     .sort("trade_date").tail(self.trend_filter_ma))
+            if bench.height >= self.trend_filter_ma:
+                closes = bench["close"].to_numpy()
+                if closes[-1] < float(closes.mean()):
+                    self._last_rebalance = d
+                    return {sym: 0.0 for sym in positions}
+
         snapshot = self.universe_filter(panel, d)
         snapshot = snapshot.filter(pl.col("trade_date") <= d)
         if snapshot.is_empty():
@@ -192,6 +217,23 @@ class MultiFactorStrategy:
             current={s: 0.0 for s in alpha},
             constraints=OptimizerConstraints(max_weight=self.max_weight, gross_target=0.95),
         )
+
+        # --- Vol-target: scale gross exposure by target / realized_vol_ann ---
+        if self.vol_target_annual is not None and weights:
+            import numpy as np
+            bench_sym = self.trend_filter_symbol or "000300.SH"
+            bench = (panel.filter(
+                        (pl.col("symbol") == bench_sym)
+                        & (pl.col("trade_date") <= d))
+                     .sort("trade_date").tail(self.vol_lookback_days + 1))
+            if bench.height >= self.vol_lookback_days + 1:
+                closes = bench["close"].to_numpy()
+                rets = np.diff(closes) / closes[:-1]
+                realized_vol_ann = float(np.std(rets)) * float(np.sqrt(252))
+                if realized_vol_ann > 1e-6:
+                    scaling = min(1.0, self.vol_target_annual / realized_vol_ann)
+                    weights = {s: w * scaling for s, w in weights.items()}
+
         self._last_rebalance = d
         return weights
 

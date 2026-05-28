@@ -71,11 +71,16 @@ def default_engine() -> FactorEngine:
 
 
 def _maybe_register_ml(eng: FactorEngine) -> None:
-    """Register any pre-trained ml_* factors found on disk."""
+    """Register any pre-trained factors found on disk (ml_* + event factors).
+
+    Used to be ml_*-only; generalized to all `name=*/data.parquet` files so
+    event-driven factors (lhb_signal, north_flow, earnings_yoy etc.) auto-load.
+    Skips any factor whose name is already registered by library/alpha101/alpha191.
+    """
     from pathlib import Path
     import polars as pl
 
-    candidates = list(Path("data/parquet/factors").glob("name=ml_*/data.parquet"))
+    candidates = list(Path("data/parquet/factors").glob("name=*/data.parquet"))
     for cand in candidates:
         # name=ml_lgb → factor name "ml_lgb"
         factor_name = cand.parent.name.removeprefix("name=")

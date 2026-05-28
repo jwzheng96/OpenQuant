@@ -1,0 +1,33 @@
+name: mf_earnings_yjyg
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# 业绩预告 strategy. Signal = winsorize(forecasted ni_yoy, ±300%) × decay
+# over 15 trading days. Forecasts are issued 30+ days before formal
+# quarterly report, often triggering immediate stock moves. Top-30
+# by forecast strength, weekly W-FRI rebalance.
+factors:
+  - name: earnings_yjyg
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

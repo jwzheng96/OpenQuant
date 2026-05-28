@@ -1,0 +1,33 @@
+name: mf_ml_strict_xgb_ma200
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# XGB baseline + MA200 trend filter on HS300. If HS300 close < 200-day MA,
+# liquidate everything → 100% cash. Re-enter when HS300 reclaims MA200.
+factors:
+  - name: ml_xgb_strict
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+  trend_filter_symbol: "000300.SH"   # HS300 as bear-market gauge
+  trend_filter_ma: 200
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"

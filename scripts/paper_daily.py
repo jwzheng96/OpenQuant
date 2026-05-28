@@ -74,14 +74,19 @@ def load_strategy(config_path: Path) -> tuple[MultiFactorStrategy, dict]:
 
         cfg["_overlay_log"] = overlay_log  # so caller can persist
 
+    risk = cfg.get("risk_overrides", {}) or {}
     strat = MultiFactorStrategy(
         factors=factors,
         top_n=cfg.get("selection", {}).get("top_n", 30),
         rebalance_freq=cfg.get("rebalance", {}).get("frequency", "W-FRI"),
-        max_weight=cfg.get("risk_overrides", {}).get("max_position_weight", 0.05),
+        max_weight=risk.get("max_position_weight", 0.05),
         neutralize_styles=cfg.get("neutralize", {}).get("enabled", False),
         qualitative_overlay=overlay,
         on_overlay_decisions=(_log_decisions if overlay else None),
+        vol_target_annual=risk.get("vol_target_annual"),
+        vol_lookback_days=risk.get("vol_lookback_days", 20),
+        trend_filter_symbol=risk.get("trend_filter_symbol"),
+        trend_filter_ma=risk.get("trend_filter_ma", 200),
     )
     return strat, cfg
 

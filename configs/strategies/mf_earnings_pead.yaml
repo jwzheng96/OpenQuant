@@ -1,0 +1,33 @@
+name: mf_earnings_pead
+version: "1.0"
+type: multi_factor
+enabled: false
+
+# Standalone PEAD strategy. Signal = winsorize(净利润同比) × decay(t since
+# announce). Top-30 stocks by PEAD strength, weekly W-FRI rebalance.
+# Note: signal only non-zero in 12% of stock-days (only within 10 trading
+# days post-announcement). Outside earnings season, fewer active candidates.
+factors:
+  - name: earnings_pead
+    weight: 1.0
+    direction: 1
+
+neutralize:
+  enabled: false
+
+selection:
+  top_n: 30
+  long_only: true
+
+rebalance:
+  frequency: "W-FRI"
+  fill_at: "next_open"
+
+risk_overrides:
+  max_position_weight: 0.05
+
+backtest:
+  start: "2024-01-02"
+  end: "2026-05-27"
+  initial_cash: 1_000_000
+  benchmark: "000300.SH"
