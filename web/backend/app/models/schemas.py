@@ -254,3 +254,31 @@ class LoginResp(BaseModel):
     token_type: str = "Bearer"
     expires_in: int     # seconds
     user: UserResp
+
+
+# ---------------------------------------------------------------------------- #
+# Backtest runner                                                               #
+# ---------------------------------------------------------------------------- #
+
+
+class BacktestSubmitReq(BaseModel):
+    strategy: str = Field(min_length=1, max_length=128)
+    start: str = Field(description="YYYY-MM-DD")
+    end: str = Field(description="YYYY-MM-DD")
+    initial_cash: float = Field(default=1_000_000.0, gt=0)
+    reset: bool = True
+
+
+class TaskResp(BaseModel):
+    id: str
+    kind: str
+    status: str
+    created_by: str | None = None
+    created_by_username: str | None = None
+    params: dict
+    started_at: str | None = None
+    finished_at: str | None = None
+    exit_code: int | None = None
+    result: dict | None = None
+    created_at: str
+    duration_seconds: float | None = None
