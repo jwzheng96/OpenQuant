@@ -44,22 +44,39 @@ ts() { date '+%Y-%m-%d %H:%M:%S'; }
         exit 0
     fi
 
-    echo "[$(ts)] step 1/2: sync $TODAY"
+    echo "[$(ts)] step 1/3: sync $TODAY"
     if python scripts/sync_today_em.py --date "$TODAY"; then
         echo "[$(ts)] sync OK"
     else
-        echo "[$(ts)] sync FAILED (exit $?); continuing to paper anyway"
+        sync_exit=$?
+        echo "[$(ts)] sync FAILED (exit $sync_exit); continuing to paper anyway"
+        python - <<PY
+from open_quant.alerts_db import write_alert
+write_alert("warning", "cron.sync_today_em",
+            "数据同步失败 (exit $sync_exit) — paper 仍将尝试运行",
+            {"date": "$TODAY", "exit_code": $sync_exit})
+PY
     fi
 
-    echo "[$(ts)] step 2/2: paper_daily --once $TODAY"
+    echo "[$(ts)] step 2/3: paper_daily --once $TODAY"
     if python scripts/paper_daily.py \
         --config "$CONFIG" \
         --once "$TODAY" \
         --state-root data/paper_state; then
         echo "[$(ts)] paper OK"
     else
-        echo "[$(ts)] paper FAILED (exit $?)"
+        paper_exit=$?
+        echo "[$(ts)] paper FAILED (exit $paper_exit)"
+        python - <<PY
+from open_quant.alerts_db import write_alert
+write_alert("critical", "cron.paper_daily",
+            "Paper trading 失败 (exit $paper_exit) — 当日 NAV 未更新",
+            {"date": "$TODAY", "exit_code": $paper_exit})
+PY
     fi
+
+    echo "[$(ts)] step 3/3: check_alerts (MDD / data staleness / outliers)"
+    python scripts/check_alerts.py || echo "[$(ts)] check_alerts itself failed (non-fatal)"
 
     echo "[$(ts)] daily_paper_cron.sh END"
 } >> "$LOG" 2>&1
