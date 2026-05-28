@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.vite/
+coverage/
+.DS_Store
+src/lib/api.gen.ts

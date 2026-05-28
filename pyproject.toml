@@ -53,6 +53,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+web = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.13",
+    "python-jose[cryptography]>=3.3",
+    "passlib[bcrypt]>=1.7",
+    "structlog>=24.1",
+    "slowapi>=0.1.9",
+    "python-multipart>=0.0.9",
+    "sse-starlette>=2.1",
+]
 live = [
     # QMT/MiniQMT - xtquant is shipped with QMT client, install from the QMT install dir
     "vnpy>=3.9",

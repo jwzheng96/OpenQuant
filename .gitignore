@@ -55,3 +55,14 @@ configs/trading.yaml
 # tmp
 *.log
 .DS_Store
+
+# ---- web/ ----
+web/frontend/node_modules/
+web/frontend/dist/
+web/frontend/.vite/
+web/frontend/src/lib/api.gen.ts
+web/backend/alembic/versions/__pycache__/
+# Caddy data + Postgres volumes are docker-managed; no on-disk artifacts to ignore.
+
+# CatBoost training artifact
+catboost_info/

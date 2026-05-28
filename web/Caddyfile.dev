@@ -1,0 +1,28 @@
+# Local dev Caddy — optional. Lets you hit http://openquant.local instead of
+# juggling :5173 / :8000.
+#
+# Setup:
+#   1. echo "127.0.0.1 openquant.local" | sudo tee -a /etc/hosts
+#   2. caddy run --config web/Caddyfile.dev  (or run inside docker compose)
+#
+# In prod Caddy uses a real domain and Let's Encrypt — see WEB_ARCHITECTURE.md.
+
+http://openquant.local {
+    encode gzip zstd
+
+    # Backend API
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+    handle /healthz /readyz {
+        reverse_proxy localhost:8000
+    }
+
+    # Vite dev server (with HMR websocket pass-through)
+    handle {
+        reverse_proxy localhost:5173 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+}
