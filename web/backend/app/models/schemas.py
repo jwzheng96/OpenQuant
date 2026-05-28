@@ -227,3 +227,30 @@ class ErrorResp(BaseModel):
     code: str
     message: str
     details: dict | None = None
+
+
+# ---------------------------------------------------------------------------- #
+# Auth                                                                          #
+# ---------------------------------------------------------------------------- #
+
+
+class LoginReq(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=255)
+
+
+class UserResp(BaseModel):
+    id: str
+    username: str
+    email: str
+    role: str
+    locale: str
+    is_active: bool
+    last_login: str | None = None
+
+
+class LoginResp(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+    expires_in: int     # seconds
+    user: UserResp

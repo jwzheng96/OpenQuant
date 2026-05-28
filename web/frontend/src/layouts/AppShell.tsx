@@ -3,9 +3,11 @@
  */
 import { ReactNode, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { LogOut, User as UserIcon } from "lucide-react";
 
 import { Sidebar } from "@/components/Sidebar";
 import { bare } from "@/lib/api";
+import { useMe, useLogout } from "@/hooks/useAuth";
 
 type Health = {
   status: string;
@@ -48,6 +50,31 @@ function NowClock() {
   );
 }
 
+function UserMenu() {
+  const me = useMe();
+  const logout = useLogout();
+  if (!me.data) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 text-xs text-foreground/80">
+        <UserIcon className="size-3.5 text-muted" />
+        <span>{me.data.username}</span>
+        <span className="rounded bg-accent/15 px-1.5 py-0.5 font-medium text-accent ring-1 ring-accent/30">
+          {me.data.role}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => logout.mutate()}
+        className="inline-flex items-center gap-1 rounded p-1.5 text-muted hover:bg-bg hover:text-foreground"
+        title="退出"
+      >
+        <LogOut className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
@@ -61,6 +88,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-4">
             <NowClock />
             <HealthIndicator />
+            <div className="h-4 w-px bg-border" />
+            <UserMenu />
           </div>
         </header>
         <main className="flex-1 overflow-auto bg-bg p-6">{children}</main>

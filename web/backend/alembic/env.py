@@ -12,8 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Import metadata + settings so 'autogenerate' sees all models.
 from app.core.config import get_settings
 from app.models.base import Base
-# Phase 0 — no models yet. Future phases import here:
-# from app.models import user, audit, task  # noqa: F401
+from app.models import db_models  # noqa: F401  — registers all ORM models
 
 config = context.config
 

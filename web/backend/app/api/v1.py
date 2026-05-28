@@ -11,12 +11,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api.auth import router as auth_router
 from app.api.data import router as data_router
 from app.api.paper import router as paper_router
 from app.api.strategies import router as strategies_router
 
 api_v1 = APIRouter(prefix="/api/v1")
 
+api_v1.include_router(auth_router)
 api_v1.include_router(strategies_router)
 api_v1.include_router(paper_router)
 api_v1.include_router(data_router)
